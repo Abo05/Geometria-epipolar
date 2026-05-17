@@ -1,3 +1,19 @@
 # Entornos virtuales
 venv/
 .venv/
+
+# Core LaTeX Auxiliary Files
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.synctex.gz
+*.synctex(busy)
+
+# Bibliography temporary files
+*.bbl
+*.blg
