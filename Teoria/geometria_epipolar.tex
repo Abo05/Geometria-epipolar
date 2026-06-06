@@ -99,6 +99,72 @@ La geometría epipolar es la geometría intrínsica de dos puntos de vista, y s�
 %	METHODS
 %----------------------------------------------------------------------------------------
 
+\section{Cámaras}
+
+En esta sección vamos a hablar de las cámaras. La idea es trasladar la noción intuitiva que tenemos sobre una cámara a un objeto matemático formal con el que poder trabajar.
+
+Si lo pensamos, lo que hace una cámara es proyectar un objeto del mundo tridimensional a una superficie bidimensional; es decir, se trata de una aplicación $c: \mathbb{R}^3 \rightarrow \mathbb{R}^2$. A continuación, exploraremos cómo se modela matemáticamente este proceso a través de las cámaras finitas y proyectivas.
+
+\subsection{Cámaras finitas}
+
+\subsubsection{La cámara estenopeica}
+
+Una de las cámaras más simples que se pueden construir es la cámara estenopeica (\textit{pinhole camera}). Consiste en una caja sin lente con un pequeño orificio por el que pasa la luz y un material fotosensible que registra la imagen. El proceso físico de registro de la imagen se sale del ámbito de este trabajo; únicamente interesa la existencia de dicho mecanismo y la geometría con la que inciden los rayos de luz.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.40\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{./Figures/Pinhole-camera.png}
+        \caption{Modelo físico e intuitivo.}
+        \label{fig:pinhole_fisica}
+    \end{subfigure}
+    \hfill % Genera espacio horizontal entre las dos imágenes
+    \begin{subfigure}[b]{0.55\textwidth}
+        \shorthandoff{>}\shorthandoff{<}
+        \resizebox{\textwidth}{!}{
+            \begin{tikzpicture}[scale=1.4, >=Stealth, every node/.style={font=\small}]
+                % Centro de la cámara
+                \coordinate (C) at (0,0);
+                \filldraw (C) circle (2pt) node[below left] {$\mathbf{C}$};
+
+                % Eje óptico / principal
+                \draw[thick, dashed, ->] (C) -- (6,0) node[right] {Eje óptico};
+
+                % Plano de la imagen (Perspectiva simulada mediante un plano inclinado)
+                \draw[thick, fill=gray!10, fill opacity=0.6] (2.5,-1.5) -- (2.5,1.5) -- (3.3,2.0) -- (3.3,-1.0) -- cycle;
+                \node[above] at (2.9,2.0) {Plano de la imagen};
+
+                % Punto principal p (intersección del eje con el plano de la imagen)
+                \coordinate (p) at (2.9, 0.25); 
+                \filldraw (p) circle (1.5pt) node[below right] {$\mathbf{p}$};
+
+                % Punto en el espacio X
+                \coordinate (X) at (5.5, 1.8);
+                \filldraw (X) circle (2pt) node[above right] {$\mathbf{X}$};
+
+                % Rayo de luz proyectado desde C hasta X
+                \draw[thick, color=blue!70!black] (C) -- (X);
+
+                % Punto proyectado x (intersección exacta del rayo con el plano)
+                \coordinate (x) at (2.92, 0.95); 
+                \filldraw[red] (x) circle (1.5pt) node[above left, color=red] {$\mathbf{x}$};
+
+                % Líneas auxiliares de proyección proyectadas sobre el eje
+                \draw[gray, dotted] (X) -- (5.5,0);
+                \draw[gray, dotted] (x) -- (2.92,0);
+
+                % Acotación de la distancia focal f
+                \draw[<->, gray] (0,-1.8) -- (2.5,-1.8) node[midway, below] {$f$};
+                \draw[gray, dashed] (0,0) -- (0,-2.0);
+                \draw[gray, dashed] (2.5,-1.5) -- (2.5,-2.0);
+            \end{tikzpicture}
+        }
+        \caption{Modelo geométrico de la cámara estenopeica.}
+        \label{fig:pinhole_tikz}
+    \end{subfigure}
+\end{figure}
+
 \section{Methods}
 
 

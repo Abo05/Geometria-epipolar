@@ -54,8 +54,6 @@ dottedtoc % Dotted lines leading to the page numbers in the table of contents
 
 \usepackage{enumitem} % Required for manipulating the whitespace between and within lists
 
-\usepackage{subfig} % Required for creating figures with multiple parts (subfigures)
-
 \usepackage{amsmath,amssymb,amsthm} % For including math equations, theorems, symbols, etc
 
 \usepackage{varioref} % More descriptive referencing
@@ -88,4 +86,10 @@ pdfcreator={pdfLaTeX}, % PDF Creator
 pdfproducer={LaTeX with hyperref and ClassicThesis} % PDF producer
 }
 
+
 \graphicspath{{Figures/}}
+\usepackage{float}    % Para usar el modificador [H]
+\usepackage{subcaption} % Necesario para el entorno subfigure
+
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, babel}
