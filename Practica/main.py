@@ -21,21 +21,21 @@ def main():
     num_disp = 16 * 8  # Debe ser divisible por 16. Aumentar si las cámaras están muy separadas.
 
     stereo = cv2.StereoSGBM_create( # type: ignore
-        minDisparity=min_disp,
-        numDisparities=num_disp,
-        blockSize=window_size,
-        P1=8 * 3 * window_size**2,   # Penalización por cambios suaves de disparidad
-        P2=32 * 3 * window_size**2,  # Penalización por saltos bruscos de disparidad
-        disp12MaxDiff=1,
-        uniquenessRatio=10,          # Margen de victoria del mejor *match* (en %)
-        speckleWindowSize=100,       # Tamaño de regiones de ruido a eliminar
-        speckleRange=32,
-        preFilterCap=63,
-        mode=cv2.STEREO_SGBM_MODE_SGBM
-    )
+                                   minDisparity=min_disp,
+                                   numDisparities=num_disp,
+                                   blockSize=window_size,
+                                   P1=8 * 3 * window_size**2,   # Penalización por cambios suaves de disparidad
+                                   P2=32 * 3 * window_size**2,  # Penalización por saltos bruscos de disparidad
+                                   disp12MaxDiff=1,
+                                   uniquenessRatio=10,          # Margen de victoria del mejor *match* (en %)
+                                   speckleWindowSize=100,       # Tamaño de regiones de ruido a eliminar
+                                   speckleRange=32,
+                                   preFilterCap=63,
+                                   mode=cv2.STEREO_SGBM_MODE_SGBM
+                                   )
 
     print("Calculando mapa de disparidad con OpenCV...")
-    
+
     # 3. Calcular la disparidad
     # OpenCV devuelve la disparidad multiplicada por 16 (formato de punto fijo de 12 bits)
     disparity_16sgbm = stereo.compute(imgL, imgR)
@@ -43,7 +43,7 @@ def main():
     # Convertir a float32 y dividir entre 16 para obtener la disparidad real en píxeles
     disparity = disparity_16sgbm.astype(np.float32) / 16.0
 
-# 4. Normalización para visualización
+    # 4. Normalización para visualización
     # Creamos la matriz de destino vacía
     disp_vis = np.zeros(disparity.shape, dtype=np.uint8)
 

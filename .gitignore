@@ -17,3 +17,6 @@ venv/
 # Bibliography temporary files
 *.bbl
 *.blg
+
+# El pdf de referencia
+*.pdf
