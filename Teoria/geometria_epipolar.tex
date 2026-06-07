@@ -96,18 +96,22 @@ BCOR=5mm, % Binding correction
 La geometría epipolar es la geometría intrínsica de dos puntos de vista, y sólo depende de los parámetros de la cámara y su posición relativa.
  
 %----------------------------------------------------------------------------------------
-%	METHODS
+%	CÁMARA
 %----------------------------------------------------------------------------------------
 
 \section{Cámaras}
 
 En esta sección vamos a hablar de las cámaras. La idea es trasladar la noción intuitiva que tenemos sobre una cámara a un objeto matemático formal con el que poder trabajar.
 
-Si lo pensamos, lo que hace una cámara es proyectar un objeto del mundo tridimensional a una superficie bidimensional; es decir, se trata de una aplicación $c: \mathbb{R}^3 \rightarrow \mathbb{R}^2$. A continuación, exploraremos cómo se modela matemáticamente este proceso a través de las cámaras finitas y proyectivas.
+Si lo pensamos, lo que hace una cámara es proyectar un objeto del mundo tridimensional a una superficie bidimensional; es decir, se trata de una aplicación $c: \mathbb{R}^3 \rightarrow \mathbb{R}^2$. Con esta idea podemos dar una definición de lo que es una cámara:
 
-\subsection{Cámaras finitas}
+\begin{definition}[Cámara]
+    Una cámara es una transformación proyectiva desde el espacio proyectivo tridimensional $P\mathbb{R}^3$ al plano proyectivo bidimensional $P\mathbb{R}^2$.
+\end{definition}
 
-\subsubsection{La cámara estenopeica}
+Para ver como modelamos está proyección vamos a ver primero un pequeño modelo físico.
+
+\subsection{La cámara idealizada}
 
 Una de las cámaras más simples que se pueden construir es la cámara estenopeica (\textit{pinhole camera}). Consiste en una caja sin lente con un pequeño orificio por el que pasa la luz y un material fotosensible que registra la imagen. El proceso físico de registro de la imagen se sale del ámbito de este trabajo; únicamente interesa la existencia de dicho mecanismo y la geometría con la que inciden los rayos de luz.
 
@@ -163,9 +167,129 @@ Una de las cámaras más simples que se pueden construir es la cámara estenopei
         \caption{Modelo geométrico de la cámara estenopeica.}
         \label{fig:pinhole_tikz}
     \end{subfigure}
+    \caption{Representación de la cámara estenopeica.}
+    \label{pinhole_camera}
 \end{figure}
 
-\section{Methods}
+Para modelar matemáticamente esta proyección, vamos a definir primero un par de conceptos.
+
+\begin{definition}[Centro óptico]
+    El centro óptico de la cámara se define formalmente como el núcleo (o espacio nulo) de la matriz de proyección $P$. Como veremos, su núcleo tiene dimensión 1,es decir, es un único punto $C \in \mathbb{P}^3$ tal que:
+    \[
+        P \cdot C = \mathbf{0}
+    \]
+\end{definition} 
+\vspace{2ex}
+
+\begin{observacion}
+    Si nos fijamos en la Figura \ref{fig:pinhole_fisica}, podemos ver que el centro óptico es precisamente el pequeño agujero o estenopo que deja pasar la luz. Vamos a suponer que es suficientemente pequeño como para modelarlo como un único punto. Y efectivamente, al ser el núcleo de la aplicación, no esta definida la imagen de $C$.
+\end{observacion}
+
+\begin{definition}[Plano de proyección y eje principal]
+    Dado un centro óptico $\mathbf{C}$ y un plano de proyección al que llamaremos \textit{plano de la imagen}, se define el \textit{eje principal} (o eje óptico) como la recta que pasa por $\mathbf{C}$ y es ortogonal a dicho plano. El punto de intersección entre el eje principal y el plano de la imagen se denomina \textit{punto principal}, y lo denotaremos por $\mathbf{p}$.
+\end{definition} 
+\vspace{2ex}
+
+\begin{definition}[Distancia focal]
+    Se define la \textit{distancia focal}, denotada por $f$, como la distancia euclídea entre el centro óptico $\mathbf{C}$ y el punto principal $\mathbf{p}$. Algebraicamente, $f$ actúa como el factor de escala intrínseco que relaciona el espacio tridimensional con el plano de proyección.
+\end{definition} 
+\vspace{2ex}
+
+Con estos conceptos ya podemos calcular la matriz de proyección para esta configuración.
+
+Fijamos nuestro sistema de referencia proyectivo situando el centro óptico en el origen, $\mathbf{C} = (0,0,0,1)^T$, y alineamos el eje óptico con el eje $Z$. Tal y como se estableció, el plano de la imagen se ubica en $Z = f$.
+
+Dado un punto tridimensional en coordenadas homogéneas $\mathbf{X} = (X, Y, Z, 1)^T$, su proyección sobre el plano de la imagen resulta en un punto bidimensional. Si temporalmente deshomogeneizamos para observar el espacio afín, la semejanza de triángulos dicta que las coordenadas de la proyección son:
+\[
+    x = f \frac{X}{Z}, \quad y = f \frac{Y}{Z}
+\]
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1.2, >=Stealth, every node/.style={font=\small}]
+        % Centro de la cámara
+        \coordinate (C) at (0,0);
+        
+        % Eje óptico (Z)
+        \draw[thick, dashed, ->] (0,0) -- (7,0) node[right] {Eje $Z$ (Profundidad)};
+        \filldraw (C) circle (2pt) node[below left] {$\mathbf{C}$};
+
+        % Plano de la imagen (Z = f)
+        \def\f{2.5}
+        \draw[thick, blue!80!black] (\f, -1.5) -- (\f, 3.5) node[above] {Plano de la imagen};
+        \coordinate (p) at (\f, 0);
+        \filldraw (p) circle (1.5pt) node[below right] {$\mathbf{p}$};
+
+        % Punto tridimensional X
+        \def\Z{6}
+        \def\X{2.8}
+        \coordinate (P3D) at (\Z, \X);
+        \filldraw (P3D) circle (2pt) node[above right] {$\mathbf{X} = (X, Y, Z)$};
+
+        % Rayo de luz
+        \draw[thick, color=orange!80!black] (C) -- (P3D);
+
+        % Punto proyectado x
+        \def\x{\f*\X/\Z} % Semejanza: x = f * X / Z
+        \coordinate (P2D) at (\f, \x);
+        \filldraw[red] (P2D) circle (1.5pt) node[above left, text=red] {$\mathbf{x} = (x, y, f)$};
+
+        % Líneas de proyección hacia el eje Z para formar los triángulos
+        \draw[dashed, gray] (P3D) -- (\Z, 0) coordinate (Z_base);
+        \draw[dashed, gray] (P2D) -- (\f, 0);
+
+        % Sombreado de los triángulos semejantes
+        \fill[blue!10, opacity=0.5] (C) -- (p) -- (P2D) -- cycle;
+        \fill[orange!10, opacity=0.4] (P2D) -- (p) -- (Z_base) -- (P3D) -- cycle;
+
+        % Acotaciones de distancias
+        \draw[<->] (0, -0.6) -- (\f, -0.6) node[midway, below] {$f$};
+        \draw[<->] (0, -1.2) -- (\Z, -1.2) node[midway, below] {$Z$};
+        
+        % Acotaciones de alturas
+        \draw[<->] (\Z+0.3, 0) -- (\Z+0.3, \X) node[midway, right] {$X$};
+        \draw[<->] (\f-0.3, 0) -- (\f-0.3, \x) node[midway, left] {$x$};
+
+    \end{tikzpicture}
+    \caption{Corte bidimensional del modelo estenopeico.}
+    \label{fig:semejanza_triangulos}
+\end{figure}
+
+Para expresar esta relación como una aplicación lineal continua en el espacio proyectivo, definimos el punto proyectado en $\mathbb{P}^2$ como $\mathbf{x} = (x, y, 1)^T$. Algebraicamente, la transformación se formula como:
+\[
+\begin{pmatrix}
+x \\
+y \\
+1
+\end{pmatrix}
+\sim
+\begin{pmatrix}
+fX \\
+fY \\
+Z
+\end{pmatrix}
+=
+\begin{pmatrix}
+f & 0 & 0 & 0 \\
+0 & f & 0 & 0 \\
+0 & 0 & 1 & 0
+\end{pmatrix}
+\begin{pmatrix}
+X \\
+Y \\
+Z \\
+1
+\end{pmatrix}
+\]
+
+Fijado el sistema de referencia en el centro óptico, la matriz $P_0$ depende exclusivamente de un único parámetro. Por esta razón, la cámara estenopeica ideal queda matemáticamente determinada en su totalidad por su centro $c$ su distancia focal $f$.
+
+Esto nos motiva a dar una definición:
+
+\begin{definition}[Cámara ideal]
+    Se define la cámara ideal como un par $(C, f)$, donde $C \in P\mathbb{R}^3$ es el centro óptico y $f \in \mathbb{R}^+$ es la distancia focal.
+\end{definition}
+
 
 
 \begin{enumerate}[noitemsep] % [noitemsep] removes whitespace between the items for a compact look

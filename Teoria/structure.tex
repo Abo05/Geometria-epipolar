@@ -62,13 +62,13 @@ dottedtoc % Dotted lines leading to the page numbers in the table of contents
 %	THEOREM STYLES
 %---------------------------------------------------------------------------------------
 
-\theoremstyle{definition} % Define theorem styles here based on the definition style (used for definitions and examples)
-\newtheorem{definition}{Definition}
+\theoremstyle{definition} 
+\newtheorem{definition}{Definición}
 
-\theoremstyle{plain} % Define theorem styles here based on the plain style (used for theorems, lemmas, propositions)
-\newtheorem{theorem}{Theorem}
+\theoremstyle{plain} 
+\newtheorem{theorem}{Teorema}
 
-\theoremstyle{remark} % Define theorem styles here based on the remark style (used for remarks and notes)
+\theoremstyle{remark}
 
 %----------------------------------------------------------------------------------------
 %	HYPERLINKS
@@ -93,3 +93,28 @@ pdfproducer={LaTeX with hyperref and ClassicThesis} % PDF producer
 
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, babel}
+
+
+%----------------------------------------------------------------------------------------
+%	OBSERVACIONES
+%---------------------------------------------------------------------------------------
+\usepackage{tcolorbox}
+
+% Definición del nuevo entorno para Observaciones
+\newcounter{observacionnum} % Contador automático
+\newenvironment{observacion}{%
+    \stepcounter{observacionnum}%
+    \begin{tcolorbox}[
+        colback=white,          % Fondo blanco
+        colframe=black,         % Borde negro
+        arc=0mm,                % Esquinas completamente cuadradas
+        boxrule=0.5pt,          % Grosor del borde exterior
+        coltitle=black,         % Color del título
+        fonttitle=\bfseries,    % Título en negrita
+        title={Observación \arabic{observacionnum}}, % Texto del título
+        attach title to upper,  % Junta el título con el contenido
+        after title={\par\noindent\rule{\linewidth}{0.5pt}\par\medskip} % Línea debajo del título
+    ]%
+}{%
+    \end{tcolorbox}%
+}
