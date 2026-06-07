@@ -201,7 +201,7 @@ La matriz fundamental es la representación algebraica de la geometría epipolar
 
 
 \subsubsection{La restricción epipolar y propiedades de la matriz fundamental}
-La restricción epipolar nos dice que por pertencer $C_1$,$C_2$,$P_1$,$P_2$ al plano epipolar han de ser coplanares. Esta restricción llevada al álgebra lineal nos genera la siguiente fórmula:\begin{equation}
+La restricción epipolar nos dice que por pertencer $C_1$,$C_2$,$p_1$,$p_2$ al plano epipolar han de ser coplanares. Esta restricción llevada al álgebra lineal nos genera la siguiente fórmula:\begin{equation}
     p_2^{T} F p_1 = 0
 \end{equation}
 
@@ -235,7 +235,7 @@ Donde $[e_2]_\times$ representa la matriz antisimétrica del segundo epípolo, q
     \text{rango}(F) = \text{rango}([e_2]_\times H) = 2
 \end{equation}
 
-Además la matriz $H$ se relaciona con las matrices de las cámaras $M_1$ y $M_2$. Al coger un rayo óptico desde $C_1$ que corta a su imagen en $p_1$ de un punto cualquiera de la escena y proyectarlo sobre la segunda se obtiene la homografía interna:
+Además, la matriz $H$ se relaciona con las matrices de las cámaras $M_1$ y $M_2$. Al coger un rayo óptico desde $C_1$ que corta a su imagen en $p_1$ de un punto cualquiera de la escena y proyectarlo sobre la segunda se obtiene la homografía interna:
 \begin{equation}
     H = M_2 M_1^{+}
 \end{equation}
@@ -244,6 +244,29 @@ Al sustituir este resultado en la primera fórmula obtenemos la relación de la 
 \begin{equation}
     F = [e_2]_\times M_2 M_1^{+}
 \end{equation}
+
+\subsubsection{Cálculo de la Matriz Fundamental}
+Una vez estudiada la estructura de la matriz fundamental, pasamos al problema del cálculo práctico de dicha matriz. Existen múltiples métodos de estimación de cálculo de la matriz fundamental. En este caso, vamos a comenzar por el algoritmo de 8 puntos.
+\paragraph{El Algoritmo Lineal de los 8 Puntos}~\\
+Este algoritmo ideado por el químico británico Longuet-Higgins, tiene como  objetivo determinar la matriz F a partir de las correspondencias entre las imágenes de 8 puntos de la escena. Para este apartado, denominaremos los puntos como $x_i$ y su correspondiente $x'_i$.
+
+El primer paso del algoritmo es aplicar la normalización de Hartley a las imagenes $x_i$ y $x'_i$. Para ello, tendremos $\hat x_i=Tx_i$ y $\hat x'_i=T'x'_i$ donde T y T' son las transformaciones que convierten el centro de los puntos para que coincida con el origen $(0,0)^T$ y luego escalar las coordenadas para que la distancia media con el nuevo origen sea $\sqrt2$.
+
+El segundo paso consiste en calcular la solución lineal. Al tener 8 parejas de puntos, cada pareja genera una ecuación de la forma  $\hat{x'}_i^{T} \hat{F} \hat{x}_i = 0$ para resolver el sistema con 9 incógnitas.Con esas ecuaciones, obtenemos la matriz $\hat A$.  A esta $\hat{A}$ se le aplica la Descomposición en Valores Singulares (SVD) para minimizar el error de píxeles.  
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{problemaError.png}
+    \caption{En esta figura se observa las correspondencias entre dos imágenes, donde las líneas verdes representan las relaciones de puntos. Pero las rectas entre sí no son todas paralelas, de ahí surge el posible error}
+    \label{fig:placeholder}
+\end{figure}
+
+A continuación, forzamos a que el rango de $\hat F$ sea 2, aplicando de nuevo SVD, dándonos como resultado la matriz  $\hat F'$
+
+Para terminar, una vez obtenido $\hat F$ debemos desnormalizar para obtener F en las coordenadas originales de los $x_i$ de nuestras imágenes. Para ello, aplicamos la siguiente operación: 
+\begin{equation}
+    F = T'^{T} \hat{F}' T
+\end{equation}
+Con ello obtenemos la matriz F. Cabe recalcar que dicha matriz es única salvo movimiento, ya que el movimiento de ambas cámaras e imágenes mantiene las relaciones epipolares entre ellas. Si solo se produce un movimiento para una de ellas entonces F si va a variar.
 
 
 
