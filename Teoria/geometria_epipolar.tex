@@ -165,50 +165,90 @@ Una de las cámaras más simples que se pueden construir es la cámara estenopei
     \end{subfigure}
 \end{figure}
 
-\section{Methods}
 
-
-\begin{enumerate}[noitemsep] % [noitemsep] removes whitespace between the items for a compact look
-\item First item in a list
-\item Second item in a list
-\item Third item in a list
-\end{enumerate}
 
 %------------------------------------------------
+\section{Geometría epipolar}
+Tras haber estudiado el funcionamiento de las cámaras, vamos a pasar a ver la geometría epipolar. Este concepto es clave dentro de la Computación Visual que estudia la geometría entre dos imágenes de una misma escena.
 
-\subsection{Paragraphs}
+La reconstrucción de imágenes sigue un proceso de varias fases. El primero es obtener la geometría epipolar de las dos imágenes dadas. Tras ello se reconstruye mediante una asociación de píxeles entre ambas imágenes. 
+
+\subsection{Geometría Epipolar}
+Para el estudio de la geometría epipolar se parte de un diagrama de dos cámara ( que denotaremos por $C_1$ y $C_2$), dos imágenes y la escena a representar. 
+
+Comencemos estudiando un punto de la escena al que denotaremos por P. A continuación trazamos un rayo óptico (recta) que una la $C_1$ con el punto P que pasa por el plano de la imagen. Haremos lo mismo con $C_2$. Para finalizar este esquema inicial trazamos una última recta que una las cámaras y pase por las imágenes. Así se genera los epípolos que se trata la intersección de esta recta con las respectivas imágenes, dichos epípolos los denotaremos por $e_1$ y $e_2$. Estas tres rectas están contenidas en lo que llamaremos plano epipolar.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{epipolar_geometry.png}
+    \caption{El diagrama de un estudio para un punto P.}
+    \label{fig:placeholder}
+\end{figure}
+
+\subsubsection{Elementos básicos de la Geometría Epipolar}
+Vamos a definir los conceptos principales necesarios para el estudio de la geometría epipolar.
+
+\begin{itemize}
+    \item Los puntos $P_1$ y $P_2$ son las proyecciones respectivas del punto P sobre las imagenes. La geometría epipolar trata la relación entre dichos puntos. 
+    \item El epípolo como hemos definido es la intersección entre la imagen y la recta que une las cámaras, es decir, es la imagen de la otra cámara en la cámara de estudio. 
+    \item El plano epipolar es el plano que contiene al punto de estudio, las cámaras, los epípolos y las respectivas imágenes del punto. Como una escena está compuesta por múltiples puntos, se generan lo que veremos como haz de planos epipolares.  
+    \item Las líneas epipolares son generadas por la intersección del plano epipolar con las dos imágenes. Debido al haz de planos epipolares se generan dos haces de rectas epipolares, una por imagen, que intersecan en su respectivo punto epipolar.
+\end{itemize}
 
 
-\paragraph{Paragraph Description}
+\subsection{La Matriz Fundamental}
+La matriz fundamental es la representación algebraica de la geometría epipolar. Esta matriz es de dimensiones $3\times3$ y la denotaremos por F. Mediante esta matriz podemos obtener las relaciones entre los puntos proyectados sobre la primera y los de la segunda imagen. 
 
-\paragraph{Different Paragraph Description}
 
-%------------------------------------------------
+\subsubsection{La restricción epipolar y propiedades de la matriz fundamental}
+La restricción epipolar nos dice que por pertencer $C_1$,$C_2$,$P_1$,$P_2$ al plano epipolar han de ser coplanares. Esta restricción llevada al álgebra lineal nos genera la siguiente fórmula:\begin{equation}
+    p_2^{T} F p_1 = 0
+\end{equation}
 
-\subsection{Math}
+La importancia de esta restricción radica en la fórmula ya que nos permite caracterizar la matriz fundamental con la relación de los puntos. 
+\\
+\\
+Las propiedades principales de la matriz fundamental son: 
 
+\begin{itemize}
+    \item La matriz fundamental es única y con rango 2, es decir, su determinante es igual a 0. 
+    \item Si F es la matriz fundamental de dos cámaras (P,P') entonces $F^{T}$ es la matriz de las cámaras (P',P). 
+    \item A partir de la matriz fundamental puedo obtener la línea epipolar de la segunda imagen que corresponde a un punto de la primera l'=F$p_1$. Inversamente la operación sería l=$F^{T}$$p_2$'.
+    \item Como los epípolos pertenecen al haz de rectas epipolares, se tiene que $e_2^{T}$(Fx) = 0 para cualquier x, lo que implica que $e_2^{T}$F = 0 y a su vez F$e_1$ = 0.
+\end{itemize}
+
+Respecto a los grados de libertad de la matriz F, tiene 8 grados de libertad por ser homogénea, pero al tener F que satisfacer que su det F = 0 entonces se queda en 7 grados de libertad.  Otra forma de justificar sus 7 grados es mediante los grados de sus componentes. Los epípolos tienen 2 grados de libertad cada uno y luego son 3 grados de libertad para la homografía que relaciona el haz de lineas epipolares de cada imagen.
+
+Para terminar veamos que la homografía nos permite calcular líneas epipolares a partir de sus correspondientes en la otra imagen. Supongamos que tenemos una recta que denotaremos por r que no pasa por el epípolo de la primera imagen. La intersección de r con l nos da un punto $p_1$. Como $p_1 \in l$ la linea epipolar correspondiente a la recta epipolar l es la misma que la que corresponde a $p_1$. 
 
 \begin{equation}
-\cos^3 \theta =\frac{1}{4}\cos\theta+\frac{3}{4}\cos 3\theta
-\label{eq:refname2}
+    l_2 = F p_1 
+\end{equation}
+
+\subsubsection{Estructura de la Matriz Fundamental}
+Vamos a estudiar la estructura de la matriz fundamental. Esta matriz a diferencia de otras matrices de transformaciones, se puede descomponer en el producto de una homografía y una matriz antisimétrica.
+\begin{equation}
+    F = [e_2]_\times H
+\end{equation}
+Donde $[e_2]_\times$ representa la matriz antisimétrica del segundo epípolo, que en este caso ejecuta el producto vectorial, y una homografía $H$ que relaciona los planos de las imágenes. Al tratarse de una composición de ambas matrices, como la matriz antisimétrica tiene rango 2 y la Homografía rango 3, el producto de ambas determina el rango de F.
+\begin{equation}
+    \text{rango}(F) = \text{rango}([e_2]_\times H) = 2
+\end{equation}
+
+Además la matriz $H$ se relaciona con las matrices de las cámaras $M_1$ y $M_2$. Al coger un rayo óptico desde $C_1$ que corta a su imagen en $p_1$ de un punto cualquiera de la escena y proyectarlo sobre la segunda se obtiene la homografía interna:
+\begin{equation}
+    H = M_2 M_1^{+}
+\end{equation}
+
+Al sustituir este resultado en la primera fórmula obtenemos la relación de la matriz fundamental con las matrices de las cámaras: 
+\begin{equation}
+    F = [e_2]_\times M_2 M_1^{+}
 \end{equation}
 
 
-\begin{definition}[Gauss] 
-To a mathematician it is obvious that
-$\int_{-\infty}^{+\infty}
-e^{-x^2}\,dx=\sqrt{\pi}$. 
-\end{definition} 
 
-\begin{theorem}[Pythagoras]
-The square of the hypotenuse (the side opposite the right angle) is equal to the sum of the squares of the other two sides.
-\end{theorem}
 
-\begin{proof} 
-We have that $\log(1)^2 = 2\log(1)$.
-But we also have that $\log(-1)^2=\log(1)=0$.
-Then $2\log(-1)=0$, from which the proof.
-\end{proof}
+
 
 %----------------------------------------------------------------------------------------
 %	RESULTS AND DISCUSSION
