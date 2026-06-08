@@ -208,7 +208,6 @@ trabajar con la \textbf{matriz esencial} $E$, que permite una reconstrucción m�
 por tanto, un mapa de profundidad en unidades reales. En este trabajo implementamos 
 y comparamos ambos enfoques.
 
-%La geometría epipolar es la geometría intrínsica de dos puntos de vista, y sólo depende de los parámetros de la cámara y su posición relativa.
 
 %----------------------------------------------------------------------------------------
 %	CÁMARA
@@ -387,13 +386,13 @@ Z
 \begin{pmatrix}
 f & 0 & 0 & 0 \\
 0 & f & 0 & 0 \\
-0 & 0 & 1 & 0
+0 & 0 & 1 & 0 
 \end{pmatrix}
 \begin{pmatrix}
 X \\
 Y \\
 Z \\
-1
+1 
 \end{pmatrix}
 \]
 
@@ -405,8 +404,51 @@ Esto nos motiva a dar una definición:
     Se define la cámara ideal como un par $(C, f)$, donde $C \in P\mathbb{R}^3$ es el centro óptico y $f \in \mathbb{R}^+$ es la distancia focal.
 \end{definition}
 
+\subsection{Generalización del modelo ideal}
 
-%------------------------------------------------
+Al formular el modelo de la cámara ideal hemos partido de ciertas simplificaciones que no tienen por qué cumplirse estrictamente en una cámara real física. A continuación, vamos a ir eliminando estas suposiciones en la medida de lo posible para construir un modelo de cámara más general y realista.
+
+\subsubsection{Desplazamiento del punto principal}
+
+En el modelo ideal, asumimos que el origen de coordenadas del plano de la imagen coincide exactamente con el punto principal $\mathbf{p}$. Sin embargo, en la práctica, el sistema de coordenadas de la imagen no tiene porque cumplirse y mucho modelos, tiene su origen en una esquina.
+
+Para corregir esto, introducimos un desplazamiento o traslación en el plano de la imagen. Si denotamos las coordenadas del punto principal en el sistema de referencia de la imagen como $(p_x, p_y)^T$, la proyección geométrica de un punto espacial $(X, Y, Z)^T$ pasa a ser:
+\[
+    x = f \frac{X}{Z} + p_x, \quad y = f \frac{Y}{Z} + p_y
+\]
+
+Para expresar esta traslación de forma lineal mediante coordenadas homogéneas, modificamos la matriz de proyección de la siguiente manera:
+\[
+\begin{pmatrix}
+x \\
+y \\
+1
+\end{pmatrix}
+=
+\begin{pmatrix}
+f & 0 & p_x & 0 \\
+0 & f & p_y & 0 \\
+0 & 0 & 1 & 0
+\end{pmatrix}
+\begin{pmatrix}
+X \\
+Y \\
+Z \\
+1
+\end{pmatrix}
+\]
+
+De este modo, podemos la matriz de proyección queda como:
+\[
+    P = \begin{pmatrix} f & 0 & p_x & 0 \\ 0 & f & p_y & 0 \\ 0 & 0 & 1 & 0 \end{pmatrix}
+\]
+
+\subsubsection{Rotación de la cámara}
+
+\newpage
+%----------------------------------------------------------------------------------------
+%	GEOMETRIA EPIPOLAR
+%----------------------------------------------------------------------------------------
 \section{Geometría epipolar}
 Tras haber estudiado el funcionamiento de las cámaras, vamos a pasar a ver la geometría epipolar. Este concepto es clave dentro de la Computación Visual que estudia la geometría entre dos imágenes de una misma escena.
 
@@ -421,7 +463,7 @@ Comencemos estudiando un punto de la escena al que denotaremos por P. A continua
     \centering
     \includegraphics[width=1\linewidth]{epipolar_geometry.png}
     \caption{El diagrama de un estudio para un punto P.}
-    \label{fig:placeholder}
+    \label{fig:diagrama_epipolar}
 \end{figure}
 
 \subsubsection{Elementos básicos de la Geometría Epipolar}
@@ -445,8 +487,9 @@ La restricción epipolar nos dice que por pertencer $C_1$,$C_2$,$p_1$,$p_2$ al p
 \end{equation}
 
 La importancia de esta restricción radica en la fórmula ya que nos permite caracterizar la matriz fundamental con la relación de los puntos. 
-\\
-\\
+
+\vspace{2ex}
+
 Las propiedades principales de la matriz fundamental son: 
 
 \begin{itemize}
@@ -496,7 +539,7 @@ El segundo paso consiste en calcular la solución lineal. Al tener 8 parejas de 
     \centering
     \includegraphics[width=0.9\linewidth]{problemaError.png}
     \caption{En esta figura se observa las correspondencias entre dos imágenes, donde las líneas verdes representan las relaciones de puntos. Pero las rectas entre sí no son todas paralelas, de ahí surge el posible error}
-    \label{fig:placeholder}
+    \label{fig:error}
 \end{figure}
 
 A continuación, forzamos a que el rango de $\hat F$ sea 2, aplicando de nuevo SVD, dándonos como resultado la matriz  $\hat F'$
