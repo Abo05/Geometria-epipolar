@@ -299,9 +299,9 @@ Para modelar matemáticamente esta proyección, vamos a definir primero un par d
     Si nos fijamos en la Figura \ref{fig:pinhole_fisica}, podemos ver que el centro óptico es precisamente el pequeño agujero o estenopo que deja pasar la luz. Vamos a suponer que es suficientemente pequeño como para modelarlo como un único punto. Y efectivamente, al ser el núcleo de la aplicación, no esta definida la imagen de $C$.
 \end{observacion}
 
-\begin{definition}[Plano de proyección y eje principal]
-    Dado un centro óptico $\mathbf{C}$ y un plano de proyección al que llamaremos \textit{plano de la imagen}, se define el \textit{eje principal} (o eje óptico) como la recta que pasa por $\mathbf{C}$ y es ortogonal a dicho plano. El punto de intersección entre el eje principal y el plano de la imagen se denomina \textit{punto principal}, y lo denotaremos por $\mathbf{p}$.
-\end{definition} 
+\begin{definition}[Referencia cartesiana de la cámara y Eje principal]
+    Al deshomogeneizar el espacio proyectivo, pasamos a trabajar en el espacio afín euclídeo tridimensional. Para formular el modelo, establecemos primero una referencia cartesiana ortonormal situando su origen en el centro óptico $\mathbf{C}$. Definimos el \textit{eje principal} (o eje óptico) haciéndolo coincidir con el eje $Z$ de esta referencia. El \textit{plano de la imagen} queda determinado de forma perpendicular a esta dirección $Z$. El punto de intersección entre el eje principal y el plano de la imagen se denomina \textit{punto principal}, denotado por $\mathbf{p}$.
+\end{definition}
 \vspace{2ex}
 
 \begin{definition}[Distancia focal]
@@ -398,10 +398,10 @@ Z \\
 
 Fijado el sistema de referencia en el centro óptico, la matriz $P_0$ depende exclusivamente de un único parámetro. Por esta razón, la cámara estenopeica ideal queda matemáticamente determinada en su totalidad por su centro $c$ su distancia focal $f$.
 
-Esto nos motiva a dar una definición:
+Esto nos motiva a dar la siguiente definición:
 
 \begin{definition}[Cámara ideal]
-    Se define la cámara ideal como un par $(C, f)$, donde $C \in P\mathbb{R}^3$ es el centro óptico y $f \in \mathbb{R}^+$ es la distancia focal.
+    Se define la cámara ideal como un par $(R, f)$, donde $R = (C, \mathcal{B})$ es una referencia cartesiana ortonormal (con origen $C \in \mathbb{R}^3$ y base ortonormal $\mathcal{B}$ del espacio $\mathbb{R}^3$), y $f \in \mathbb{R}^+$ es la distancia focal.
 \end{definition}
 
 \subsection{Generalización del modelo ideal}
