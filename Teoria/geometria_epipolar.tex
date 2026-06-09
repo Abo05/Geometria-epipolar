@@ -323,7 +323,7 @@ Dado un punto tridimensional en coordenadas homogéneas $\mathbf{X} = (X, Y, Z, 
     \begin{tikzpicture}[scale=1.2, >=Stealth, every node/.style={font=\small}]
         % Centro de la cámara
         \coordinate (C) at (0,0);
-        
+
         % Eje óptico (Z)
         \draw[thick, dashed, ->] (0,0) -- (7,0) node[right] {Eje $Z$ (Profundidad)};
         \filldraw (C) circle (2pt) node[below left] {$\mathbf{C}$};
@@ -359,7 +359,7 @@ Dado un punto tridimensional en coordenadas homogéneas $\mathbf{X} = (X, Y, Z, 
         % Acotaciones de distancias
         \draw[<->] (0, -0.6) -- (\f, -0.6) node[midway, below] {$f$};
         \draw[<->] (0, -1.2) -- (\Z, -1.2) node[midway, below] {$Z$};
-        
+
         % Acotaciones de alturas
         \draw[<->] (\Z+0.3, 0) -- (\Z+0.3, \X) node[midway, right] {$X$};
         \draw[<->] (\f-0.3, 0) -- (\f-0.3, \x) node[midway, left] {$x$};
@@ -371,29 +371,29 @@ Dado un punto tridimensional en coordenadas homogéneas $\mathbf{X} = (X, Y, Z, 
 
 Para expresar esta relación como una aplicación lineal continua en el espacio proyectivo, definimos el punto proyectado en $\mathbb{P}^2$ como $\mathbf{x} = (x, y, 1)^T$. Algebraicamente, la transformación se formula como:
 \[
-\begin{pmatrix}
-x \\
-y \\
-1
-\end{pmatrix}
-\sim
-\begin{pmatrix}
-fX \\
-fY \\
-Z
-\end{pmatrix}
-=
-\begin{pmatrix}
-f & 0 & 0 & 0 \\
-0 & f & 0 & 0 \\
-0 & 0 & 1 & 0 
-\end{pmatrix}
-\begin{pmatrix}
-X \\
-Y \\
-Z \\
-1 
-\end{pmatrix}
+    \begin{pmatrix}
+        x \\
+        y \\
+        1
+    \end{pmatrix}
+    \sim
+    \begin{pmatrix}
+        fX \\
+        fY \\
+        Z
+    \end{pmatrix}
+    =
+    \begin{pmatrix}
+        f & 0 & 0 & 0 \\
+        0 & f & 0 & 0 \\
+        0 & 0 & 1 & 0 
+    \end{pmatrix}
+    \begin{pmatrix}
+        X \\
+        Y \\
+        Z \\
+        1 
+    \end{pmatrix}
 \]
 
 Fijado el sistema de referencia en el centro óptico, la matriz $P_0$ depende exclusivamente de un único parámetro. Por esta razón, la cámara estenopeica ideal queda matemáticamente determinada en su totalidad por su centro $c$ su distancia focal $f$.
@@ -419,23 +419,23 @@ Para corregir esto, introducimos un desplazamiento o traslación en el plano de 
 
 Para expresar esta traslación de forma lineal mediante coordenadas homogéneas, modificamos la matriz de proyección de la siguiente manera:
 \[
-\begin{pmatrix}
-x \\
-y \\
-1
-\end{pmatrix}
-=
-\begin{pmatrix}
-f & 0 & p_x & 0 \\
-0 & f & p_y & 0 \\
-0 & 0 & 1 & 0
-\end{pmatrix}
-\begin{pmatrix}
-X \\
-Y \\
-Z \\
-1
-\end{pmatrix}
+    \begin{pmatrix}
+        x \\
+        y \\
+        1
+    \end{pmatrix}
+    =
+    \begin{pmatrix}
+        f & 0 & p_x & 0 \\
+        0 & f & p_y & 0 \\
+        0 & 0 & 1 & 0
+    \end{pmatrix}
+    \begin{pmatrix}
+        X \\
+        Y \\
+        Z \\
+        1
+    \end{pmatrix}
 \]
 
 De este modo, podemos la matriz de proyección queda como:
@@ -443,9 +443,172 @@ De este modo, podemos la matriz de proyección queda como:
     P = \begin{pmatrix} f & 0 & p_x & 0 \\ 0 & f & p_y & 0 \\ 0 & 0 & 1 & 0 \end{pmatrix}
 \]
 
-\subsubsection{Rotación de la cámara}
+\subsubsection{Posición y orientación}
+
+Hasta ahora se había asumido que la referencia cartesiana de la cámara coincidía con la referencia global del espacio tridimensional. Sin embargo, al modelar una escena general, y especialmente al tratar con varias cámaras simultáneamente, los puntos del espacio se expresan respecto a una referencia cartesiana global.
+
+Dado que tanto la referencia del mundo como la de la cámara se exigen ortonormales, la transformación entre ambas consiste exclusivamente en una isometría del espacio euclídeo, es decir, una rotación y una traslación.
+
+Geométricamente, para transformar un punto $\mathbf{X}_{\text{mundo}}$ al sistema local de la cámara, primero calculamos el vector relativo desde el centro óptico al punto, es decir, $(\mathbf{X}_{\text{mundo}} - \mathbf{C})$. A continuación, rotamos este vector para alinear los ejes del mundo con los de la cámara multiplicando por una matriz de rotación $R \in SO(3)$. Esta matriz está determinada por los ángulos que forman los ejes de ambas referencias.
+
+Podemos definir esta matriz de forma constructiva: si la orientación de la cámara viene dada por una base ortonormal cuyos vectores unitarios direccionales son $\mathbf{u}, \mathbf{v}, \mathbf{w}$ expresados en las coordenadas del mundo, las filas de la matriz de rotación $R$ están formadas exactamente por estos vectores transpuestos:
+\[
+    R = \begin{pmatrix} \mathbf{u}^T \mathbf{v}^T \mathbf{w}^T \end{pmatrix}
+\]
+
+La expresión afín del cambio de coordenadas en el espacio tridimensional es:
+\[
+    \mathbf{X}_{\text{cam}} = R (\mathbf{X}_{\text{mundo}} - \mathbf{C}) = R \mathbf{X}_{\text{mundo}} - R \mathbf{C}
+\]
+
+Al pasar a coordenadas homogéneas, esta transformación se escribe de forma matricial utilizando notación por bloques. Siendo $R$ una matriz de $3 \times 3$, $-R\mathbf{C}$ un vector columna de $3 \times 1$ y $\mathbf{0}^T = (0,0,0)$ un vector fila, la matriz de transformación afín es de $4 \times 4$:
+\[
+    \begin{pmatrix}
+        \mathbf{X}_{\text{cam}} \\
+        1
+    \end{pmatrix}
+    =
+    \begin{pmatrix}
+        R_{3 \times 3} & (-R\mathbf{C})_{3 \times 1} \\
+        \mathbf{0}^T_{1 \times 3} & 1
+    \end{pmatrix}
+    \begin{pmatrix}
+        \mathbf{X}_{\text{mundo}} \\
+        1
+    \end{pmatrix}
+\]
+
+De esta deducción se extrae que el vector de traslación genérico de la cámara es $\mathbf{t} = -R\mathbf{C} \in \mathbb{R}^3$. Esta representación desvincula la rotación $R$ (orientación pura) de la traslación dependiente de la posición espacial del centro óptico $\mathbf{C}$.
+
+Una vez el punto se encuentra en el sistema de referencia local de la cámara, se le puede aplicar directamente la matriz de calibración intrínseca para obtener su proyección en el plano de la imagen:
+\[
+    \mathbf{x} = K [I_{3 \times 3} \mid \mathbf{0}_{3 \times 1}] \begin{pmatrix} R & \mathbf{t} \\ \mathbf{0}^T & 1 \end{pmatrix} \begin{pmatrix} \mathbf{X}_{\text{mundo}} \\ 1 \end{pmatrix} = K [R \mid \mathbf{t}] \begin{pmatrix} \mathbf{X}_{\text{mundo}} \\ 1 \end{pmatrix}
+\]
+
+De este modo, la matriz de proyección general de la cámara $P$, de dimensiones $3 \times 4$, queda definida algebraicamente como el producto de sus parámetros intrínsecos y extrínsecos:
+\[
+    P = K [R \mid \mathbf{t}]
+\]
+
+\subsubsection{Píxeles no cuadrados y relación de aspecto}
+
+Hasta ahora hemos considerado que ambos ejes de la imagen escalan de la misma forma geométrica. Sin embargo, en ciertos modelos de cámara, como puede ser aquellos equipados con sensores CCD, los elementos fotosensibles tienen forma rectangular en lugar de cuadrada. 
+
+En consecuencia, el sistema de coordenadas de los píxeles pierde la condición de normalidad. Para modelar este escalado asimétrico, se introducen dos factores $k_x$ y $k_y$, que representan la densidad de píxeles por unidad de longitud en las direcciones horizontal y vertical. Esto desdobla la distancia focal en dos parámetros independientes, $f_x = f \cdot k_x$ y $f_y = f \cdot k_y$, modificando la matriz de calibración intrínseca $K$:
+\[
+    K = \begin{pmatrix}
+        f_x & 0 & p_x \\
+        0 & f_y & p_y \\
+        0 & 0 & 1
+    \end{pmatrix}
+\]
+
+\subsubsection{La cámara finita general}
+
+Como hemos deducido en las secciones anteriores, la matriz de proyección general de la cámara se puede descomponer explícitamente aislando su centro óptico $\mathbf{C}$ de la siguiente manera:
+\[
+    P = K R [I_{3 \times 3} \mid -\mathbf{C}]
+\]
+Esta expresión agrupa los 11 grados de libertad del modelo en dos conjuntos fundamentales:
+\begin{itemize}
+    \item \textbf{Parámetros intrínsecos (matriz $K$):} Definen las propiedades internas y la geometría del sensor y son las distancias focales $f_x, f_y$ y el punto principal $(p_x, p_y)$.
+    \item \textbf{Parámetros extrínsecos (matriz $R$ y centro $\mathbf{C}$):} Definen la posición espacial: centro de proyección $\mathbf{C}$ y la orientación: rotación ortogonal $R$, de la cámara respecto al sistema de coordenadas global del mundo.
+\end{itemize}
+
+Esta formulación asume que el centro óptico es un punto real y finito del espacio. Algebraicamente, esto nos lleva a la siguiente definición:
+
+\begin{definition}[Cámara finita]
+    Una cámara proyectiva finita es aquella cuya matriz de proyección $P$, de dimensiones $3 \times 4$, se descompone como $P = [M \mid \mathbf{p}_4]$, donde la submatriz izquierda $M$ de $3 \times 3$ es no singular ($\det(M) \neq 0$).
+\end{definition}
+
+\subsection{Cámaras en el infinito}
+
+Como se ha visto en el desarrollo de la cámara finita se asume implícitamente que la submatriz izquierda $M$ de dimensiones $3 \times 3$ de la matriz de proyección $P = [M \mid \mathbf{p}_4]$ es no singular ($\det(M) \neq 0$). Esto garantiza que el centro óptico $\mathbf{C}$ se encuentra en un punto finito del espacio euclídeo.
+
+Si se elimina esta restricción analítica y se permite que $\det(M) = 0$, el cálculo del núcleo de $P$ fuerza a que la última coordenada homogénea del centro óptico sea nula ($W=0$). Geométricamente, esto traslada el centro de proyección al infinito, lo que implica que los rayos de luz incidentes dejan de formar un cono convergente y pasan a ser paralelos. Este caso singular define los modelos de proyección paralela, los cuales se utilizan en visión artificial como una aproximación matemática robusta cuando el objeto observado está muy alejado respecto a su propio tamaño, anulando los efectos de la perspectiva dando mejores resultados que una cámara finita.
+
+\begin{figure}[H]
+    \centering
+    % --- Subfigura 1: Cámara finita ---
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \shorthandoff{>}\shorthandoff{<}
+        \resizebox{\textwidth}{!}{
+            \begin{tikzpicture}[scale=1.2, >=Stealth, every node/.style={font=\small}]
+                % Centro óptico
+                \coordinate (C) at (0,0);
+
+                % Rayos proyectivos
+                \draw[thick, orange!80!black, ->] (C) -- (5, 2.2);
+                \draw[thick, orange!80!black, ->] (C) -- (5, 0);
+                \draw[thick, orange!80!black, ->] (C) -- (5, -2.2);
+
+                % Plano de la imagen
+                \draw[thick, blue!80!black, fill=blue!10, fill opacity=0.7] (2, -2.2) -- (3, -1.7) -- (3, 2.2) -- (2, 1.7) -- cycle;
+                \node[above] at (2.5, 2.0) {Plano de la imagen};
+
+                % Puntos 3D
+                \filldraw (5, 2.2) circle (2pt) node[right] {$\mathbf{X}_1$};
+                \filldraw (5, 0) circle (2pt) node[right] {$\mathbf{X}_2$};
+                \filldraw (5, -2.2) circle (2pt) node[right] {$\mathbf{X}_3$};
+
+                % Puntos proyectados
+                \filldraw[red] (2.5, 1.1) circle (1.5pt) node[above left, text=red] {$\mathbf{x}_1$};
+                \filldraw[red] (2.5, 0) circle (1.5pt) node[above left, text=red] {$\mathbf{x}_2$};
+                \filldraw[red] (2.5, -1.1) circle (1.5pt) node[below left, text=red] {$\mathbf{x}_3$};
+
+                \filldraw (C) circle (2pt) node[left] {$\mathbf{C}$};
+            \end{tikzpicture}
+        }
+        \caption{Cámara finita: Rayos convergentes.}
+        \label{fig:rayos_finitos}
+    \end{subfigure}
+    \hfill
+    % --- Subfigura 2: Cámara en el infinito ---
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \shorthandoff{>}\shorthandoff{<}
+        \resizebox{\textwidth}{!}{
+            \begin{tikzpicture}[scale=1.2, >=Stealth, every node/.style={font=\small}]
+                % Rayos proyectivos paralelos
+                \draw[thick, orange!80!black, ->] (0, 1.5) -- (5, 1.5);
+                \draw[thick, orange!80!black, ->] (0, 0) -- (5, 0);
+                \draw[thick, orange!80!black, ->] (0, -1.5) -- (5, -1.5);
+
+                % Rayos desde el infinito (discontinuos para dar sensación de lejanía)
+                \draw[dashed, orange!80!black] (-1, 1.5) -- (0, 1.5);
+                \draw[dashed, orange!80!black] (-1, 0) -- (0, 0);
+                \draw[dashed, orange!80!black] (-1, -1.5) -- (0, -1.5);
+
+                % Centro óptico en el infinito
+                \node[left] at (-1, 0) {$\mathbf{C}_\infty$};
+
+                % Plano de la imagen
+                \draw[thick, blue!80!black, fill=blue!10, fill opacity=0.7] (2, -2.2) -- (3, -1.7) -- (3, 2.2) -- (2, 1.7) -- cycle;
+                \node[above] at (2.5, 2.0) {Plano de la imagen};
+
+                % Puntos 3D
+                \filldraw (5, 1.5) circle (2pt) node[right] {$\mathbf{X}_1$};
+                \filldraw (5, 0) circle (2pt) node[right] {$\mathbf{X}_2$};
+                \filldraw (5, -1.5) circle (2pt) node[right] {$\mathbf{X}_3$};
+
+                % Puntos proyectados
+                \filldraw[red] (2.5, 1.5) circle (1.5pt) node[above left, text=red] {$\mathbf{x}_1$};
+                \filldraw[red] (2.5, 0) circle (1.5pt) node[above left, text=red] {$\mathbf{x}_2$};
+                \filldraw[red] (2.5, -1.5) circle (1.5pt) node[below left, text=red] {$\mathbf{x}_3$};
+            \end{tikzpicture}
+        }
+        \caption{Cámara afín: Rayos paralelos.}
+        \label{fig:rayos_infinitos}
+    \end{subfigure}
+    \caption{Comparación geométrica de los rayos de proyección entre los modelos de cámara.}
+    \label{fig:comparacion_camaras}
+\end{figure}
+
+Aunque hacemos esta mención a las cámaras en el infinito por completitud analítica, para la siguiente sección de \textit{geometría epipolar} asumiremos de manera estricta el modelo de cámara finita general.
 
 \newpage
+
 %----------------------------------------------------------------------------------------
 %	GEOMETRIA EPIPOLAR
 %----------------------------------------------------------------------------------------
