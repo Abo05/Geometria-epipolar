@@ -553,7 +553,7 @@ A continuación, estudiaremos el algoritmo de RANSAC, mediante el cual se calcul
         \caption{Resultado de aplicar RANSAC sobre las correspondencias tentativas. En verde se muestran las correspondencias correctas que el algoritmo ha identificado como coherentes con la matriz $\mathbf{F}$ estimada, y en rojo las descartadas por ser inconsistentes con el modelo.}
         \label{fig:ransac}
     \end{figure}
-    \item Finalmente, con el conjunto completo de aciertos identificado por  RANSAC, se re-estima F usando mínimos cuadrados. Al utilizar muchos más puntos que los 7 iniciales, y al estar todos ellos libres de errores, la solución final es significativamente más precisa y estable que cualquiera de las estimadas durante el bucle.
+    \item Finalmente, con el conjunto completo de aciertos identificado por  RANSAC, se re-estima F usando el algoritmo de 8 puntos. Al utilizar muchos más puntos que los 7 iniciales, y al estar todos ellos libres de errores, la solución final es significativamente más precisa y estable que cualquiera de las estimadas durante el bucle.
 \end{enumerate}
 
 \subsection{Matriz Esencial}
