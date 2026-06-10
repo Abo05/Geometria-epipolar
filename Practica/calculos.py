@@ -93,9 +93,11 @@ def _fundamental_8point(pts1, pts2):
     F_rank2 = U @ np.diag(S) @ Vt2
     F = Tp.T @ F_rank2 @ T
 
-    # Normalizamos la matriz de tal forma que el último elemento sea 1
-    if abs(F[2, 2]) > 1e-10:
-        F /= F[2, 2]
+    # Renormalizar por la norma de Frobenius, no por F[2,2]
+    # F[2,2] puede ser ~0 con cámaras casi paralelas y divide mal
+    fnorm = np.linalg.norm(F)
+    if fnorm > 1e-10:
+        F /= fnorm
     # Caso especial donde el elemento F[2,2] se acerca a 0
     # Por ejemplo, cuando el único movimiento que hacemos es mover la
     # cámara hacia delante, manteniendo el mismo origen de coordenadas
@@ -166,6 +168,9 @@ def compute_fundamental(pts1, pts2, use_ransac=True,
         # Volvemos a calcular la matriz fundamental, pero ahora solo con
         # aquellos puntos buenos
         best_F = _fundamental_8point(pts1[best_mask], pts2[best_mask])
+        fnorm = np.linalg.norm(best_F)
+        if fnorm > 1e-10:
+            best_F /= fnorm
 
     return best_F, best_mask
 
@@ -295,39 +300,24 @@ def _fit_shared(H1_raw, H2_raw, h, w):
     return S1, S2
 
 
-def compute_rectification(F, img_shape):
+def compute_rectification(F, img_shape, pts1_inliers, pts2_inliers):
     """
-    Calcula H1, H2 para rectificar el par estéreo.
-
-    Tras aplicar H1 e H2 a las imágenes izquierda y derecha
-    respectivamente, las líneas epipolares quedan horizontales en
-    ambas imágenes, y la búsqueda de correspondencias se reduce a
-    comparar píxeles de la misma fila.
-
-    Parámetros
-    ----------
-    F          : (3,3) matriz fundamental.
-    img_shape  : (h, w) resolución de las imágenes.
+    Usa cv2.stereoRectifyUncalibrated (Hartley 1999) con los inliers
+    para calcular H1, H2 estables incluso con epipolos dentro de la imagen.
     """
     h, w = img_shape[:2]
 
-    e1 = epipole(F.T)   # epipolo en imagen izquierda
-    e2 = epipole(F)     # epipolo en imagen derecha
+    ok, H1, H2 = cv2.stereoRectifyUncalibrated(
+        pts1_inliers.astype(np.float32),
+        pts2_inliers.astype(np.float32),
+        F,
+        imgSize=(w, h),
+        threshold=5.0,
+    )
+    if not ok:
+        raise RuntimeError("stereoRectifyUncalibrated falló")
 
-    # Homografías(matrices 3x3 que deforman la imagen)
-    # Convierten las líneas epipolares en horizontales(luego paralelas)
-    # Esto lo hace mandando el epipolo al infinito
-    H1_raw = _H_align_epipole(e1, h, w)
-    H2_raw = _H_align_epipole(e2, h, w)
-
-    # S1 y S2 compartidas: misma escala y mismo ty para preservar
-    # la alineación vertical que H1_raw y H2_raw ya garantizan.
-    S1, S2 = _fit_shared(H1_raw, H2_raw, h, w)
-
-    H1 = S1 @ H1_raw
-    H2 = S2 @ H2_raw
-
-    return H1, H2
+    return H1.astype(np.float64), H2.astype(np.float64)
 
 
 # ============================================================
@@ -377,7 +367,7 @@ def warp_image(img, H):
 # ============================================================
 
 def compute_disparity(img1, img2, max_disp=64, block_size=9,
-                      uniqueness=0.15, median_ksize=5):
+                      uniqueness=0.1, median_ksize=5):
     """
     Block matching por SSD con ventana 2-D y post-procesado.
  
@@ -390,35 +380,11 @@ def compute_disparity(img1, img2, max_disp=64, block_size=9,
     objeto aparece más a la IZQUIERDA en img2. Para alinear img2 con img1
     se desplaza img2 d píxeles a la DERECHA: shifted[:, d:] = img2[:, :w-d].
     Esto es equivalente a comparar img1[x] con img2[x-d] para cada x. ✓
- 
-    Fuentes de ruido y sus correcciones:
- 
-    PROBLEMA 1 — Mínimo ambiguo en zonas sin textura:
-    En zonas uniformes, el SSD es casi idéntico para todas las disparidades
-    y d=0 gana por ser el primero. Produce grandes manchas de disparidad 0.
-    Corrección: test de unicidad — solo se acepta una disparidad si su coste
-    es significativamente menor que el segundo mejor (ratio < 1-uniqueness).
- 
-    PROBLEMA 2 — Outliers aislados en bordes y zonas de baja textura:
-    El mínimo del SSD puede saltar entre píxeles vecinos produciendo ruido
-    sal-y-pimienta. No se puede eliminar durante el matching sin perder bordes.
-    Corrección: filtro de mediana sobre el mapa final. La mediana preserva
-    los bordes mejor que un filtro de media o gaussiano porque usa el valor
-    de un vecino real en lugar de promediar.
- 
-    Parameters
-    ----------
-    uniqueness   : float — margen mínimo entre el mejor y segundo mejor coste,
-                           expresado como fracción del mejor coste.
-                           0.15 significa que el segundo mejor debe ser al menos
-                           15% peor que el mejor para aceptar la disparidad.
-                           Mayor valor → más estricto, más píxeles inválidos.
-    median_ksize : int   — tamaño del kernel del filtro de mediana (impar).
-                           0 desactiva el filtro.
     """
     h, w  = img1.shape[:2]
     i1    = img1.astype(np.float32)
     i2    = img2.astype(np.float32)
+
     pad   = block_size // 2
  
     # Guardamos los dos mejores costes para el test de unicidad
@@ -469,8 +435,9 @@ def compute_disparity(img1, img2, max_disp=64, block_size=9,
  
     # Filtro de mediana: elimina outliers sal-y-pimienta preservando bordes
     if median_ksize > 1:
-        disp_map = cv2.medianBlur(disp_map.astype(np.float32), median_ksize)
- 
+        disp_map = cv2.medianBlur(disp_map, median_ksize)
+        disp_map = cv2.medianBlur(disp_map, median_ksize)
+        
     return disp_map
 
 
@@ -479,32 +446,17 @@ def compute_disparity(img1, img2, max_disp=64, block_size=9,
 # ============================================================
 
 def disparity_to_depth(disp, baseline=1.0, focal=1.0, min_disp=0.5):
-    """
-    Convierte disparidad a profundidad: Z = f·B / d.
-
-    Los píxeles con d < min_disp no tienen información de correspondencia
-    y se marcan con 0 en lugar de convertirse a un valor de profundidad
-    enorme (1/1e-6 = 1_000_000) que aplastaría el rango de visualización.
-
-    Si se conocen:
-    Baseline: Distancia entre los centros ópticos de las cámaras
-    Distancia focal: Distancia desde el centro óptico hasta el plano
-    de la imagen(medida en píxeles)
-    Se podría calcular una profundidad real, pero sin conocerlos,
-    la profundidad calculada es relativa
-
-    Parámetros
-    ----------
-    min_disp : float — disparidad mínima considerada válida (px).
-                       El block matcher devuelve 0 en zonas sin textura
-                       o donde no encontró correspondencia.
-    """
-    # Llenamos el mapa de profundidad con ceros
     depth = np.zeros_like(disp, dtype=np.float32)
-    # Encontramos aquellos que sí tienen información de correspondencia
     valid = disp >= min_disp
-    # Modificamos el valor de esto últimos con su profundidad
     depth[valid] = (focal * baseline) / disp[valid]
+
+    # Normalizar al rango [0,1] e invertir para que cercano=brillante
+    valid_vals = depth[valid]
+    if len(valid_vals) > 0:
+        d_min, d_max = valid_vals.min(), valid_vals.max()
+        if d_max > d_min:
+            depth[valid] = 1.0 - (depth[valid] - d_min) / (d_max - d_min)
+
     return depth
 
 # ===========================
@@ -582,7 +534,7 @@ def draw_horizontal_lines(imgLr, imgRr, pts1_rect, pts2_rect, num_lines=10):
 
 def stereo_depth(imgL, imgR, pts1, pts2,
                  use_ransac=True, threshold_px=1.5, ransac_iters=1000,
-                 max_disp=256, block_size=9):
+                 max_disp=64, block_size=15):
     """
     Pipeline completo: correspondencias -> F -> rectificación -> disparidad -> profundidad.
 
@@ -603,7 +555,7 @@ def stereo_depth(imgL, imgR, pts1, pts2,
     img1_epi, img2_epi = draw_epipolar_lines_opencv(imgL, imgR, F, pts1, pts2, num_lines=15)
 
     # Pasar img_shape para que la rectificación ajuste al canvas
-    H1, H2 = compute_rectification(F, imgL.shape)
+    H1, H2 = compute_rectification(F, imgL.shape, pts1[mask], pts2[mask])
 
     imgLr = warp_image(imgL, H1)
     imgRr = warp_image(imgR, H2)
@@ -640,6 +592,9 @@ def stereo_depth(imgL, imgR, pts1, pts2,
 
     p1 = (H1 @ pts1h.T).T
     p2 = (H2 @ pts2h.T).T
+
+    p1 = p1[mask]
+    p2 = p2[mask]
 
     p1 /= p1[:,2:3]
     p2 /= p2[:,2:3]
