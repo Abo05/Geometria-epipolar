@@ -751,6 +751,12 @@ Este algoritmo estima la matriz $F$ resolviendo un sistema lineal sobredetermina
 \begin{enumerate}
     \item \textbf{Normalización (Hartley):} Se aplican transformaciones afines $T$ y $T'$ a las coordenadas de la imagen para trasladar el centroide de los puntos al origen $(0,0)^T$ y escalar su distancia media al origen a $\sqrt{2}$. Las coordenadas normalizadas son $\hat{\mathbf{x}}_i=T \mathbf{x}_i$ y $\hat{\mathbf{x}}'_i=T' \mathbf{x}'_i$.
     \item \textbf{Solución lineal:} Cada par genera una ecuación $\hat{\mathbf{x}}'^T_i \hat{F} \hat{\mathbf{x}}_i = 0$. Apilando las ecuaciones se forma un sistema $A \mathbf{f} = \mathbf{0}$, donde $\mathbf{f}$ contiene los elementos de $\hat{F}$. La solución se obtiene calculando el vector propio asociado al menor valor singular de $A$ mediante la Descomposición en Valores Singulares (SVD).
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{problemaError.png}
+    \caption{En esta figura se observan las correspondecias de puntos de dos imágenes de una escena. Las rectas verdes al no ser paralelas reflejan que debido al ruido y errores de localización de los puntos de interés, ninguna solución satisface todas las ecuaciones a la vez. Esto motiva el uso de SVD.}
+    \label{fig:errores}
+\end{figure}
     \item \textbf{Imposición de rango 2:} Se descompone la matriz resultante $\hat{F}$ mediante SVD, se anula su menor valor singular y se recompone para obtener una matriz $\hat{F}'$ estrictamente singular.
     \item \textbf{Desnormalización:} Finalmente, la matriz se proyecta de vuelta al espacio de coordenadas original:
     \begin{equation}
@@ -771,12 +777,24 @@ En un escenario real, las correspondencias automáticas contienen valores atípi
 
 \begin{enumerate}
     \item \textbf{Extracción y Emparejamiento:} Se detectan puntos de interés (keypoints) en ambas imágenes y se establecen correspondencias tentativas basadas en descriptores locales.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{ransac aux2.png}
+        \caption{Correspondencias tentativas entre dos vistas de la misma escena. Las líneas conectan puntos de interés con descriptores similares. El patrón caótico de líneas se debe a la presencia de \textit{inliers} y \textit{outliers}, al aplicar RANSAC se filtran los \textit{outliers}, conservando únicamente los \textit{inliers}.}
+        \label{fig:ransac_correspondencias}
+    \end{figure}
     \item \textbf{Muestreo iterativo:} Durante $N$ iteraciones:
     \begin{enumerate}
         \item Se selecciona aleatoriamente un subconjunto mínimo (ej. 7 u 8 correspondencias) para instanciar una matriz candidata $F_k$.
         \item Se evalúa el consenso general computando el error de todos los pares frente a $F_k$ (generalmente la distancia de Sampson o la distancia epipolar ortogonal $d_\perp$).
         \item Se contabiliza el número de \textit{inliers} (correspondencias con error inferior a un umbral $\tau$).
     \end{enumerate}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{ransac aux3.png}
+        \caption{Resultado de aplicar RANSAC sobre las correspondencias tentativas. En verde se muestran los  \textit{inliers} que el algoritmo ha identificado como coherentes con la matriz $\mathbf{F}$ estimada, y en rojo los  \textit{outliers} descartados por ser inconsistentes con el modelo.}
+        \label{fig:ransac}
+    \end{figure}
     \item \textbf{Reestimación final:} Se retiene la matriz $F$ que maximice el soporte (mayor número de \textit{inliers}). Finalmente, se recalcula $F$ aplicando el algoritmo de 8 puntos normalizado utilizando exclusivamente todo el conjunto de \textit{inliers} validados.
 \end{enumerate}
 
