@@ -91,42 +91,6 @@ def colormap(gray_uint8):
     """Aplica colormap INFERNO para mejor percepción de profundidad."""
     return cv2.applyColorMap(gray_uint8, cv2.COLORMAP_INFERNO)
 
-
-def show_results(imgL, imgR, imgLr, imgRr, disp, depth):
-    """Muestra un panel con los 6 resultados del pipeline."""
-    h, w = imgL.shape
-
-    # Convertir a BGR para poder mezclar con imágenes de color
-    def to_bgr(img):
-        return cv2.cvtColor(img, cv2.COLOR_GRAY2BGR) if img.ndim == 2 else img
-
-    disp_vis  = colormap(normalize_for_display(disp))
-    depth_vis = colormap(normalize_depth_for_display(depth))
-
-    row1 = np.hstack([to_bgr(imgL),  to_bgr(imgR)])
-    row2 = np.hstack([to_bgr(imgLr), to_bgr(imgRr)])
-    row3 = np.hstack([disp_vis,      depth_vis])
-
-    panel = np.vstack([row1, row2, row3])
-
-    # Etiquetas
-    font    = cv2.FONT_HERSHEY_SIMPLEX
-    labels  = [
-        (10, 30,  "Original izquierda"),
-        (w + 10, 30,  "Original derecha"),
-        (10, h + 30,  "Rectificada izquierda"),
-        (w + 10, h + 30, "Rectificada derecha"),
-        (10, 2*h + 30,   "Disparidad"),
-        (w + 10, 2*h + 30, "Profundidad relativa"),
-    ]
-    for x, y, text in labels:
-        cv2.putText(panel, text, (x, y), font, 0.6, (200, 200, 200), 1, cv2.LINE_AA)
-
-    cv2.imshow("Pipeline estéreo", panel)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
 # ============================================================
 # MAIN
 # ============================================================
@@ -161,9 +125,6 @@ def main() :
         imgL, imgR, pts1, pts2,
     )
 
-    print(f"  Inliers RANSAC: {mask.sum()} / {len(mask)}")
-    print(f"  Matriz fundamental F:\n{F}")
-
     print("Guardando resultados...")
     cv2.imwrite("output/rect_left.png",   imgLr)
     cv2.imwrite("output/rect_right.png",  imgRr)
@@ -171,9 +132,6 @@ def main() :
     cv2.imwrite("output/depth.png",           normalize_depth_for_display(depth))
     cv2.imwrite("output/disparity_color.png", colormap(normalize_for_display(disp)))
     cv2.imwrite("output/depth_color.png",     colormap(normalize_depth_for_display(depth)))
-
-    print("Mostrando resultados (pulsa cualquier tecla para cerrar)...")
-    show_results(imgL, imgR, imgLr, imgRr, disp, depth)
 
 
 if __name__ == "__main__":

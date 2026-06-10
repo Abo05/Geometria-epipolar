@@ -119,7 +119,7 @@ def _epipolar_residuals(F, pts1, pts2):
 
 
 def compute_fundamental(pts1, pts2, use_ransac=True,
-                        threshold_px=1.5, iterations=1000):
+                        threshold_px=0.5, iterations=5000):
     # Pasamos de float32 a float64
     pts1 = np.float64(pts1)
     pts2 = np.float64(pts2)
@@ -248,37 +248,51 @@ def _H_align_epipole(e, altura, anchura):
     return G @ R @ T
 
 
-def _fit_to_canvas(H, h, w):
+def _fit_shared(H1_raw, H2_raw, h, w):
     """
-    Calcula una similitud S (escala uniforme + traslación) tal que
-    S @ H mapea las 4 esquinas de la imagen (h, w) dentro del canvas.
-
-    Esto soluciona el caso en que el epipolo está dentro de la imagen:
-    la H de Hartley pura manda píxeles fuera del canvas y la imagen
-    warpeada queda completamente negra.
+    Calcula S1 y S2 con escala y traslación-Y COMPARTIDAS entre ambas
+    homografías, y traslación-X independiente para centrar cada imagen.
+ 
+    Por qué escala y ty deben ser iguales:
+    H1 y H2 alinean las líneas epipolares con el eje X, pero la
+    transformación proyectiva G introduce distorsión diferente en cada
+    imagen según la distancia del epipolo al centro. Si S1 y S2 se
+    calculan independientemente, cada una rescala su imagen a su manera:
+    una fila y=300 en imgLr no corresponde a y=300 en imgRr, y el block
+    matcher busca en la fila equivocada → error vertical grande → mapa
+    de disparidad incorrecto.
+ 
+    La solución: escala = mínimo de ambas (para que las dos quepan),
+    ty = centrado sobre el rango Y combinado de ambas imágenes.
+    Solo tx puede diferir: la diferencia horizontal entre los campos
+    de visión de cada cámara es precisamente la disparidad que queremos medir.
     """
-    corners = np.array([[0, 0, 1],
-                        [w, 0, 1],
-                        [0, h, 1],
-                        [w, h, 1]], dtype=float).T       # (3, 4)
-    warped  = H @ corners
-    warped /= warped[2]
-    xs, ys  = warped[0], warped[1]
-
-    # Escala uniforme mínima para que todo el contenido quepa
-    scale = min(w / (xs.max() - xs.min() + 1e-10),
-                h / (ys.max() - ys.min() + 1e-10))
-
-    # Traslación para centrar en el canvas
-    cx = (xs.min() + xs.max()) / 2
-    cy = (ys.min() + ys.max()) / 2
-    tx = w / 2 - scale * cx
-    ty = h / 2 - scale * cy
-
-    S = np.array([[scale, 0,     tx],
-                  [0,     scale, ty],
-                  [0,     0,      1]], dtype=float)
-    return S
+    def bbox(H):
+        corners = np.array([[0,0,1],[w,0,1],[0,h,1],[w,h,1]], dtype=float).T
+        warped  = H @ corners
+        warped /= warped[2]
+        return warped[0], warped[1]
+ 
+    xs1, ys1 = bbox(H1_raw)
+    xs2, ys2 = bbox(H2_raw)
+ 
+    # Escala compartida: la más pequeña de las cuatro restricciones
+    scale = min(w / (xs1.max()-xs1.min()+1e-10),
+                h / (ys1.max()-ys1.min()+1e-10),
+                w / (xs2.max()-xs2.min()+1e-10),
+                h / (ys2.max()-ys2.min()+1e-10))
+ 
+    # ty compartido: centrar el rango Y combinado en el canvas
+    y_mid = (min(ys1.min(), ys2.min()) + max(ys1.max(), ys2.max())) / 2
+    ty    = h / 2 - scale * y_mid
+ 
+    # tx independiente: centrar cada imagen en X por separado
+    tx1 = w / 2 - scale * (xs1.min() + xs1.max()) / 2
+    tx2 = w / 2 - scale * (xs2.min() + xs2.max()) / 2
+ 
+    S1 = np.array([[scale, 0, tx1], [0, scale, ty], [0, 0, 1]], dtype=float)
+    S2 = np.array([[scale, 0, tx2], [0, scale, ty], [0, 0, 1]], dtype=float)
+    return S1, S2
 
 
 def compute_rectification(F, img_shape):
@@ -306,9 +320,9 @@ def compute_rectification(F, img_shape):
     H1_raw = _H_align_epipole(e1, h, w)
     H2_raw = _H_align_epipole(e2, h, w)
 
-    # Ajustar cada H para que el resultado llene el canvas
-    S1 = _fit_to_canvas(H1_raw, h, w)
-    S2 = _fit_to_canvas(H2_raw, h, w)
+    # S1 y S2 compartidas: misma escala y mismo ty para preservar
+    # la alineación vertical que H1_raw y H2_raw ya garantizan.
+    S1, S2 = _fit_shared(H1_raw, H2_raw, h, w)
 
     H1 = S1 @ H1_raw
     H2 = S2 @ H2_raw
@@ -362,84 +376,101 @@ def warp_image(img, H):
 # 5. DISPARIDAD (block matching SSD vectorizado)
 # ============================================================
 
-def compute_disparity(img1, img2, max_disp=192, block_size=21):
+def compute_disparity(img1, img2, max_disp=64, block_size=9,
+                      uniqueness=0.15, median_ksize=5):
     """
-    Block matching por SSD con ventana 2-D.
-    El padding asimétrico garantiza que cost_full tenga exactamente
-    el mismo shape que la imagen de entrada, para cualquier block_size.
-
-    Asume que las imágenes ya han sido rectificadas (homografía aplicada), por lo que
-    el epipolo está en el infinito y la búsqueda de correspondencias se limita a
-    desplazamientos puramente horizontales en la misma fila.
+    Block matching por SSD con ventana 2-D y post-procesado.
+ 
+    Asume imágenes rectificadas: la correspondencia de un píxel (x,y)
+    de img1 solo puede estar en la fila y de img2, desplazada d píxeles
+    a la izquierda (d ∈ [0, max_disp)).
+ 
+    La dirección del desplazamiento:
+    La cámara derecha está a la derecha de la izquierda, así que el mismo
+    objeto aparece más a la IZQUIERDA en img2. Para alinear img2 con img1
+    se desplaza img2 d píxeles a la DERECHA: shifted[:, d:] = img2[:, :w-d].
+    Esto es equivalente a comparar img1[x] con img2[x-d] para cada x. ✓
+ 
+    Fuentes de ruido y sus correcciones:
+ 
+    PROBLEMA 1 — Mínimo ambiguo en zonas sin textura:
+    En zonas uniformes, el SSD es casi idéntico para todas las disparidades
+    y d=0 gana por ser el primero. Produce grandes manchas de disparidad 0.
+    Corrección: test de unicidad — solo se acepta una disparidad si su coste
+    es significativamente menor que el segundo mejor (ratio < 1-uniqueness).
+ 
+    PROBLEMA 2 — Outliers aislados en bordes y zonas de baja textura:
+    El mínimo del SSD puede saltar entre píxeles vecinos produciendo ruido
+    sal-y-pimienta. No se puede eliminar durante el matching sin perder bordes.
+    Corrección: filtro de mediana sobre el mapa final. La mediana preserva
+    los bordes mejor que un filtro de media o gaussiano porque usa el valor
+    de un vecino real en lugar de promediar.
+ 
+    Parameters
+    ----------
+    uniqueness   : float — margen mínimo entre el mejor y segundo mejor coste,
+                           expresado como fracción del mejor coste.
+                           0.15 significa que el segundo mejor debe ser al menos
+                           15% peor que el mejor para aceptar la disparidad.
+                           Mayor valor → más estricto, más píxeles inválidos.
+    median_ksize : int   — tamaño del kernel del filtro de mediana (impar).
+                           0 desactiva el filtro.
     """
-    # 1. Preparación de estructuras
-    # Dimensiones de la imagen
     h, w  = img1.shape[:2]
-
-    # Convertimos a float para evitar desbordamiento de ints
     i1    = img1.astype(np.float32)
     i2    = img2.astype(np.float32)
-
-    # Radio del bloque
-    radioB = block_size // 2
-
-    # Matriz donde almacenaremos el menor error
-    # Inicializada a infinito
-    best_cost = np.full((h, w), np.inf, dtype=np.float32)
-    
-    # Matriz donde almacenaremos el resultado final
-    disp_map  = np.zeros((h, w), dtype=np.float32)
-
-    # 2. Suma optimizada
+    pad   = block_size // 2
+ 
+    # Guardamos los dos mejores costes para el test de unicidad
+    best_cost        = np.full((h, w), np.inf, dtype=np.float32)
+    second_best_cost = np.full((h, w), np.inf, dtype=np.float32)
+    disp_map         = np.zeros((h, w), dtype=np.float32)
+ 
     def box_sum(arr):
         """
-        Suma de manera eficiente los valores dentro de una ventana móvil 
-        de block_size x block_size. En lugar de usar bucles 'for' 
-        anidados, usa sumas acumuladas (O(1) por píxel).
+        Suma en ventana móvil block_size×block_size usando sumas acumuladas.
+        Coste O(1) por píxel independientemente del tamaño del bloque.
         """
-        # Suma acumulada vertical
         s = np.cumsum(arr, axis=0)
-
-        # Suma vertical del bloque
-        s = s[block_size:] - s[:-block_size]
-
-        # Suma acumulada horizontal
+        s = s[block_size:] - s[:-block_size]        # suma vertical del bloque
         s = np.cumsum(s, axis=1)
-
-        # Suma horizontal del bloque
-        s = s[:, block_size:] - s[:, :-block_size]
+        s = s[:, block_size:] - s[:, :-block_size]  # suma horizontal del bloque
         return s
-
-    # 3. Busqueda en la línea epipolar horizontal
+ 
     for d in range(max_disp):
-        # Lienzo vacio del tamaño de la imagen
         shifted        = np.zeros_like(i2)
-        # Alineamos los puntos con disparidad d de ambas imágenes
         shifted[:, d:] = i2[:, :w - d] if d > 0 else i2
-
-        # Calculamos el error
-        cost  = box_sum((i1 - shifted) ** 2)
-
-        # La matriz cost es más pequeña que la imagen pues 
-        # box_sum pierde los bordes. Calculamos cuanto se redujo
+ 
+        cost = box_sum((i1 - shifted) ** 2)
+ 
+        # Padding asimétrico: recupera exactamente (h, w) para cualquier
+        # block_size y resolución de imagen
         dh = h - cost.shape[0]
         dw = w - cost.shape[1]
-
-        # Ponemos cost al tamaño original (h,v)
-        # Rellenamos duplicando los valores del borde
         cost_full = np.pad(cost,
-                           ((radioB, dh - radioB), (radioB, dw - radioB)),
+                           ((pad, dh - pad), (pad, dw - pad)),
                            mode='edge')
-        if d in [0, 8, 16, 32, 48, 63, 100, 140, 192]:
-            print(d, np.mean(cost_full))
-
-        # Guardamos qué píxeles donde se ha mejorado el coste
-        better            = cost_full < best_cost
-        # Actualizamos en el registro el nuevo coste mínimo
-        best_cost[better] = cost_full[better]
-        # Guardamos en esos píxeles la disparidad d que mejoro el coste
-        disp_map[better]  = d
-
+ 
+        # Actualizar los dos mejores costes
+        is_best   = cost_full < best_cost
+        is_second = (~is_best) & (cost_full < second_best_cost)
+ 
+        second_best_cost[is_best]   = best_cost[is_best]   # el anterior mejor pasa a segundo
+        second_best_cost[is_second] = cost_full[is_second]
+ 
+        best_cost[is_best] = cost_full[is_best]
+        disp_map[is_best]  = d
+ 
+    # Test de unicidad: descarta píxeles donde el mejor y segundo mejor
+    # coste son demasiado parecidos (mínimo poco pronunciado → match ambiguo)
+    if uniqueness > 0:
+        ambiguous          = best_cost * (1.0 + uniqueness) > second_best_cost
+        disp_map[ambiguous] = 0
+ 
+    # Filtro de mediana: elimina outliers sal-y-pimienta preservando bordes
+    if median_ksize > 1:
+        disp_map = cv2.medianBlur(disp_map.astype(np.float32), median_ksize)
+ 
     return disp_map
 
 
@@ -476,6 +507,74 @@ def disparity_to_depth(disp, baseline=1.0, focal=1.0, min_disp=0.5):
     depth[valid] = (focal * baseline) / disp[valid]
     return depth
 
+# ===========================
+# BORRAR
+# ===========================
+def draw_epipolar_lines_opencv(img1, img2, F, pts1, pts2, num_lines=10):
+    """
+    Dibuja líneas epipolares usando cv2.computeCorrespondEpilines.
+    - En img1: líneas epipolares de los puntos de img2.
+    - En img2: líneas epipolares de los puntos de img1.
+    """
+    img1_line = img1.copy()
+    img2_line = img2.copy()
+    h1, w1 = img1.shape[:2]
+    h2, w2 = img2.shape[:2]
+    
+    # Seleccionar algunos puntos aleatorios
+    n = min(len(pts1), num_lines)
+    idx = np.random.choice(len(pts1), n, replace=False)
+    pts1_sample = pts1[idx].reshape(-1, 1, 2).astype(np.float32)
+    pts2_sample = pts2[idx].reshape(-1, 1, 2).astype(np.float32)
+    
+    # Líneas en img1 a partir de puntos en img2
+    lines1 = cv2.computeCorrespondEpilines(pts2_sample, 2, F)
+    lines1 = lines1.reshape(-1, 3)
+    for l, pt1 in zip(lines1, pts1_sample.reshape(-1, 2)):
+        a, b, c = l
+        x0, y0 = 0, int(-c / b) if abs(b) > 1e-6 else 0
+        x1, y1 = w1, int((-c - a*w1) / b) if abs(b) > 1e-6 else h1
+        if 0 <= y0 < h1 and 0 <= y1 < h1:
+            cv2.line(img1_line, (x0, y0), (x1, y1), (0, 255, 0), 1)
+        cv2.circle(img1_line, tuple(pt1.astype(int)), 4, (0, 0, 255), -1)
+    
+    # Líneas en img2 a partir de puntos en img1
+    lines2 = cv2.computeCorrespondEpilines(pts1_sample, 1, F)
+    lines2 = lines2.reshape(-1, 3)
+    for l, pt2 in zip(lines2, pts2_sample.reshape(-1, 2)):
+        a, b, c = l
+        x0, y0 = 0, int(-c / b) if abs(b) > 1e-6 else 0
+        x1, y1 = w2, int((-c - a*w2) / b) if abs(b) > 1e-6 else h2
+        if 0 <= y0 < h2 and 0 <= y1 < h2:
+            cv2.line(img2_line, (x0, y0), (x1, y1), (0, 255, 0), 1)
+        cv2.circle(img2_line, tuple(pt2.astype(int)), 4, (0, 0, 255), -1)
+    
+    return img1_line, img2_line
+
+def draw_horizontal_lines(imgLr, imgRr, pts1_rect, pts2_rect, num_lines=10):
+    """
+    Dibuja líneas horizontales en imágenes rectificadas para verificar
+    que las correspondencias están en la misma fila.
+    """
+    h, w = imgLr.shape[:2]
+    n = min(len(pts1_rect), num_lines)
+    idx = np.random.choice(len(pts1_rect), n, replace=False)
+    
+    imgL_out = imgLr.copy()
+    imgR_out = imgRr.copy()
+    
+    for i in idx:
+        x1, y1 = pts1_rect[i]
+        x2, y2 = pts2_rect[i]
+        y = int(round(y1))
+        if 0 <= y < h:
+            cv2.line(imgL_out, (0, y), (w-1, y), (255, 0, 0), 1)
+            cv2.line(imgR_out, (0, y), (w-1, y), (255, 0, 0), 1)
+        cv2.circle(imgL_out, (int(x1), int(y1)), 4, (0, 0, 255), -1)
+        cv2.circle(imgR_out, (int(x2), int(y2)), 4, (0, 0, 255), -1)
+    return imgL_out, imgR_out
+
+# ===========================
 
 # ============================================================
 # 7. PIPELINE COMPLETO
@@ -483,7 +582,7 @@ def disparity_to_depth(disp, baseline=1.0, focal=1.0, min_disp=0.5):
 
 def stereo_depth(imgL, imgR, pts1, pts2,
                  use_ransac=True, threshold_px=1.5, ransac_iters=1000,
-                 max_disp=64, block_size=9):
+                 max_disp=256, block_size=9):
     """
     Pipeline completo: correspondencias -> F -> rectificación -> disparidad -> profundidad.
 
@@ -500,11 +599,32 @@ def stereo_depth(imgL, imgR, pts1, pts2,
         iterations=ransac_iters,
     )
 
+        # Dibujar líneas epipolares en imágenes originales
+    img1_epi, img2_epi = draw_epipolar_lines_opencv(imgL, imgR, F, pts1, pts2, num_lines=15)
+
     # Pasar img_shape para que la rectificación ajuste al canvas
     H1, H2 = compute_rectification(F, imgL.shape)
 
     imgLr = warp_image(imgL, H1)
     imgRr = warp_image(imgR, H2)
+
+        # Aplicar las homografías a los puntos inliers para verificar alineación horizontal
+    pts1_h = np.hstack([pts1, np.ones((len(pts1), 1))]).T
+    pts2_h = np.hstack([pts2, np.ones((len(pts2), 1))]).T
+    pts1_rect = (H1 @ pts1_h).T
+    pts2_rect = (H2 @ pts2_h).T
+    pts1_rect /= pts1_rect[:, 2:3]
+    pts2_rect /= pts2_rect[:, 2:3]
+
+    # Dibujar líneas horizontales en imágenes rectificadas
+    imgL_horiz, imgR_horiz = draw_horizontal_lines(imgLr, imgRr, pts1_rect[:, :2], 
+                                                   pts2_rect[:, :2], num_lines=15)
+
+    # Mostrar resultados
+    cv2.imwrite('output/epipolaresIzquierda.png', img1_epi)
+    cv2.imwrite('output/epipolaresDerecha.png', img2_epi)
+    cv2.imwrite('output/rectificadaIzquierda.png', imgL_horiz)
+    cv2.imwrite('output/rectificadaDerecha.png', imgR_horiz)
 
     disp  = compute_disparity(imgLr, imgRr, max_disp=max_disp, block_size=block_size)
     depth = disparity_to_depth(disp)
@@ -527,12 +647,8 @@ def stereo_depth(imgL, imgR, pts1, pts2,
     print("error vertical medio:", np.mean(np.abs(p1[:,1]-p2[:,1])))
     print("error horizontal medio:", np.mean(np.abs(p1[:,0]-p2[:,0])))
 
-    print("epipolo izquierdo:", epipole(F))
-    print("epipolo izquierdo:", epipole(F.T))
-
     err_y = np.abs(p1[:,1] - p2[:,1])
 
-    print("Error vertical medio:", err_y.mean())
     print("Error vertical máximo:", err_y.max())
 
     valid = disp > 0
