@@ -421,7 +421,7 @@ Comencemos estudiando un punto de la escena al que denotaremos por P. A continua
     \centering
     \includegraphics[width=1\linewidth]{epipolar_geometry.png}
     \caption{El diagrama de un estudio para un punto P.}
-    \label{fig:placeholder}
+    \label{fig:diagrama}
 \end{figure}
 
 \subsubsection{Elementos básicos de la Geometría Epipolar}
@@ -436,7 +436,7 @@ Vamos a definir los conceptos principales necesarios para el estudio de la geome
 
 
 \subsection{La Matriz Fundamental}
-La matriz fundamental es la representación algebraica de la geometría epipolar. Esta matriz es de dimensiones $3\times3$ y la denotaremos por F. Mediante esta matriz podemos obtener las relaciones entre los puntos proyectados sobre la primera y los de la segunda imagen. 
+La matriz fundamental es una matriz que relaciona los puntos proyectados en ambas imágenes, es decir, describe la relación entre $P_1$ y $P_2$. Se trata de una matriz $3\times3$ y la denotaremos por F. Mediante esta matriz, podemos obtener las líneas epipolares correspondientes a las proyecciones en cada imagen de los puntos $P$ de la escena.
 
 
 \subsubsection{La restricción epipolar y propiedades de la matriz fundamental}
@@ -463,6 +463,9 @@ Para terminar veamos que la homografía nos permite calcular líneas epipolares 
 \begin{equation}
     l_2 = F p_1 
 \end{equation}
+Esta relación es la que hace que F sea tan útil en la práctica: conocida la matriz, 
+basta con un punto en una imagen para determinar en qué línea debe encontrarse su 
+correspondiente en la otra
 
 \subsubsection{Estructura de la Matriz Fundamental}
 Vamos a estudiar la estructura de la matriz fundamental. Esta matriz a diferencia de otras matrices de transformaciones, se puede descomponer en el producto de una homografía y una matriz antisimétrica.
@@ -496,7 +499,7 @@ El segundo paso consiste en calcular la solución lineal. Al tener 8 parejas de 
     \centering
     \includegraphics[width=0.9\linewidth]{problemaError.png}
     \caption{En esta figura se observa las correspondencias entre dos imágenes, donde las líneas verdes representan las relaciones de puntos. Pero las rectas entre sí no son todas paralelas, de ahí surge el posible error}
-    \label{fig:placeholder}
+    \label{fig:errores}
 \end{figure}
 
 A continuación, forzamos a que el rango de $\hat F$ sea 2, aplicando de nuevo SVD, dándonos como resultado la matriz  $\hat F'$
@@ -506,6 +509,54 @@ Para terminar, una vez obtenido $\hat F$ debemos desnormalizar para obtener F en
     F = T'^{T} \hat{F}' T
 \end{equation}
 Con ello obtenemos la matriz F. Cabe recalcar que dicha matriz es única salvo movimiento, ya que el movimiento de ambas cámaras e imágenes mantiene las relaciones epipolares entre ellas. Si solo se produce un movimiento para una de ellas entonces F si va a variar.
+
+\paragraph{El Algoritmo Lineal de los 7 Puntos}~\\
+Otro algoritmo es el de los 7 puntos.Esto es posible porque F tiene 7 grados de libertad, por lo que 7 puntos son suficientes para plantear y resolver el sistema.
+
+A partir de las 7 correspondencias se construye un sistema lineal homogéneo 
+$Af = 0$, cuya solución es una combinación lineal de dos matrices:
+\begin{equation}
+    F = \alpha F_1 + (1-\alpha)F_2
+\end{equation}
+Imponiendo la restricción $\det{F} = 0$ se obtiene un polinomio cúbico en 
+$\alpha$, que puede tener 1 o 3 soluciones reales. Cada solución corresponde 
+a una posible matriz fundamental, y se selecciona la que produzca mayor número de 
+aciertos al evaluarla sobre el conjunto completo de correspondencias.
+
+\subsubsection{RANSAC}
+A continuación, estudiaremos el algoritmo de RANSAC, mediante el cual se calcula la matriz F estimada a partir de dos imágenes de la escena.Los pasos a seguir para este algoritmo son los sigiuentes: 
+\begin{enumerate}
+    \item Comenzamos detectando \textbf{puntos de interés} en ambas imágenes. El objetivo es buscar en ambas imágenes elementos que aparezcan en ambos y sean identificables.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{ransac aux.jpg}
+        \caption{En este caso sería relacionar los puntos de encima de las torres o las esquinas de la estatua o incluso los dedos del personaje principal de la escena. }
+        \label{fig:ransac_keypoints}
+    \end{figure}
+    \item A continuación, se calcula las \textbf{correspondencias tentativas} entre los puntos de interés de ambas imágenes. Para cada punto de una imagen se busca su pareja más similar en la otra, se tiene en cuenta en la comparación tanto su posición como el aspecto visual de su entorno local. Cabe destacar que estas correspondencias pueden ser correctas o incorrectas.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{ransac aux2.png}
+        \caption{Correspondencias tentativas entre dos vistas de la misma escena. Las 
+    líneas conectan puntos similares. Se observan líneas azules y líneas rojas que se cruzan caóticamente relaciones correctas con incorrectas, al aplicar RANSAC se separan dichas líneas}
+        \label{fig:ransac_correspondencias}
+    \end{figure}
+    \item Seguidamente se aplica el algoritmo de RANSAC, se repite un número N de veces, donde N depende del número de errores del apartado anterior:
+    \begin{enumerate}
+        \item Seleccionar aleatoriamente 7 correspondencias y calculamos la matriz fundamental a partir de ellas.
+        \item Para cada correspondencia se calcula la distancia epipolar, es decir, cuánto se aleja el punto de la línea donde debería estar si F fuera correcta. Una distancia pequeña indica que esa pareja es coherente con el modelo propuesto.
+        \item Se cuentan las correspondencias con $d_\perp < \tau$, donde $\tau$ es un  umbral de tolerancia. El número de aciertos indica la calidad del modelo de F propuesto en esta iteración. N se actualiza dinámicamente para garantizar que al menos una muestra haya estado libre de errores.
+    \end{enumerate}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{ransac aux3.png}
+        \caption{Resultado de aplicar RANSAC sobre las correspondencias tentativas. En verde se muestran las correspondencias correctas que el algoritmo ha identificado como coherentes con la matriz $\mathbf{F}$ estimada, y en rojo las descartadas por ser inconsistentes con el modelo.}
+        \label{fig:ransac}
+    \end{figure}
+    \item Finalmente, con el conjunto completo de aciertos identificado por  RANSAC, se re-estima F usando mínimos cuadrados. Al utilizar muchos más puntos que los 7 iniciales, y al estar todos ellos libres de errores, la solución final es significativamente más precisa y estable que cualquiera de las estimadas durante el bucle.
+\end{enumerate}
+
+\subsection{Matriz Esencial}
 
 
 
