@@ -117,8 +117,8 @@ en la propiedad proyectiva de convertir rectas en rectas.
 El espacio proyectivo maneja esta cuestión añadiendo un hiperplano del infinito,
 donde las rectas paralelas se cortan. Para trabajar con estos puntos en el plano
 proyectivo $\mathbb{P}^2$, utilizamos coordenadas homogéneas $(x_1:x_2:x_3)$ donde un punto del 
-infinito se representa con $x_1=0$, mientras que un punto finito tiene $x_1\neq0$ 
-(normalmente se toma $x_1=1$). De esta manera, podemos tratar los puntos del infinito 
+infinito se representa con $x_3=0$, mientras que un punto finito tiene $x_3\neq0$ 
+(normalmente se toma $x_3=1$). De esta manera, podemos tratar los puntos del infinito 
 y los del espacio euclidiano sin necesidad de diferenciarlos, y convertir puntos del 
 infinito en puntos normales y viceversa.
 
@@ -170,7 +170,7 @@ x^2+y^2 = (x+iy)(x-iy)=0,
 \]
 obteniendo los puntos circulares (en coordenadas homogéneas):
 \[
-I = [0:1:i], \qquad J = [0:1:-i].
+I = [1:i:0], \qquad J = [1:-i:0].
 \]
 
 Por lo tanto, pasar del afín al euclidiano significa encontrar estos puntos circulares,
@@ -205,9 +205,7 @@ la profundidad.
 
 Si además conocemos la calibración (es decir, la imagen de la cónica absoluta), podemos 
 trabajar con la \textbf{matriz esencial} $E$, que permite una reconstrucción métrica y, 
-por tanto, un mapa de profundidad en unidades reales. En este trabajo implementamos 
-y comparamos ambos enfoques.
-
+por tanto, un mapa de profundidad en unidades reales. 
 
 %----------------------------------------------------------------------------------------
 %	CÁMARA
@@ -613,14 +611,19 @@ Aunque hacemos esta mención a las cámaras en el infinito por completitud anal�
 %	GEOMETRIA EPIPOLAR
 %----------------------------------------------------------------------------------------
 \section{Geometría epipolar}
-Tras haber estudiado el funcionamiento de las cámaras, vamos a pasar a ver la geometría epipolar. Este concepto es clave dentro de la Computación Visual que estudia la geometría entre dos imágenes de una misma escena.
 
-La reconstrucción de imágenes sigue un proceso de varias fases. El primero es obtener la geometría epipolar de las dos imágenes dadas. Tras ello se reconstruye mediante una asociación de píxeles entre ambas imágenes. 
+La geometría epipolar es la geometría proyectiva intrínseca entre dos vistas. Depende exclusivamente de los parámetros internos de las cámaras y de su posición relativa, siendo completamente independiente de la estructura de la escena tridimensional.
 
-\subsection{Geometría Epipolar}
-Para el estudio de la geometría epipolar se parte de un diagrama de dos cámara ( que denotaremos por $C_1$ y $C_2$), dos imágenes y la escena a representar. 
+Este concepto es fundamental en la Visión por Computador para el análisis geométrico de múltiples imágenes de una misma escena. Constituye la primera fase de la reconstrucción tridimensional, restringiendo y facilitando la búsqueda de correspondencias de píxeles entre distintas vistas.
 
-Comencemos estudiando un punto de la escena al que denotaremos por P. A continuación trazamos un rayo óptico (recta) que una la $C_1$ con el punto P que pasa por el plano de la imagen. Haremos lo mismo con $C_2$. Para finalizar este esquema inicial trazamos una última recta que una las cámaras y pase por las imágenes. Así se genera los epípolos que se trata la intersección de esta recta con las respectivas imágenes, dichos epípolos los denotaremos por $e_1$ y $e_2$. Estas tres rectas están contenidas en lo que llamaremos plano epipolar.
+\subsection{Fundamentos geométricos y elementos básicos}
+
+Para modelar analíticamente esta relación, consideramos dos cámaras finitas descritas por sus matrices de proyección $P_1$ y $P_2$, que actúan como aplicaciones lineales continuas sobre el espacio proyectivo:
+\[
+    P_1, P_2: P\mathbb{R}^3 \longrightarrow P\mathbb{R}^2
+\]
+
+Sea $\mathbf{X} \in P\mathbb{R}^3$ un punto de la escena tridimensional cuyas proyecciones en los respectivos planos imagen son los puntos $\mathbf{x}_1 = P_1 \mathbf{X}$ y $\mathbf{x}_2 = P_2 \mathbf{X}$. 
 
 \begin{figure}[H]
     \centering
@@ -629,89 +632,155 @@ Comencemos estudiando un punto de la escena al que denotaremos por P. A continua
     \label{fig:diagrama_epipolar}
 \end{figure}
 
-\subsubsection{Elementos básicos de la Geometría Epipolar}
-Vamos a definir los conceptos principales necesarios para el estudio de la geometría epipolar.
+A partir de esta configuración espacial, se definen los elementos analíticos fundamentales:
 
-\begin{itemize}
-    \item Los puntos $P_1$ y $P_2$ son las proyecciones respectivas del punto P sobre las imagenes. La geometría epipolar trata la relación entre dichos puntos. 
-    \item El epípolo como hemos definido es la intersección entre la imagen y la recta que une las cámaras, es decir, es la imagen de la otra cámara en la cámara de estudio. 
-    \item El plano epipolar es el plano que contiene al punto de estudio, las cámaras, los epípolos y las respectivas imágenes del punto. Como una escena está compuesta por múltiples puntos, se generan lo que veremos como haz de planos epipolares.  
-    \item Las líneas epipolares son generadas por la intersección del plano epipolar con las dos imágenes. Debido al haz de planos epipolares se generan dos haces de rectas epipolares, una por imagen, que intersecan en su respectivo punto epipolar.
-\end{itemize}
-
-
-\subsection{La Matriz Fundamental}
-La matriz fundamental es la representación algebraica de la geometría epipolar. Esta matriz es de dimensiones $3\times3$ y la denotaremos por F. Mediante esta matriz podemos obtener las relaciones entre los puntos proyectados sobre la primera y los de la segunda imagen. 
-
-
-\subsubsection{La restricción epipolar y propiedades de la matriz fundamental}
-La restricción epipolar nos dice que por pertencer $C_1$,$C_2$,$p_1$,$p_2$ al plano epipolar han de ser coplanares. Esta restricción llevada al álgebra lineal nos genera la siguiente fórmula:\begin{equation}
-    p_2^{T} F p_1 = 0
-\end{equation}
-
-La importancia de esta restricción radica en la fórmula ya que nos permite caracterizar la matriz fundamental con la relación de los puntos. 
+\begin{definition}[Plano epipolar]
+Geométricamente, el punto tridimensional $\mathbf{X}$ y los centros ópticos $\mathbf{C}_1$ y $\mathbf{C}_2$ de ambas cámaras determinan un plano en el espacio, que denominaremos \textit{plano epipolar} $\pi$.
+\end{definition}
 
 \vspace{2ex}
 
-Las propiedades principales de la matriz fundamental son: 
+Las rectas (rayos ópticos) que unen cada centro óptico con el punto $\mathbf{X}$ intersecan los planos imagen exactamente en los puntos de correspondencia $\mathbf{x}_1$ y $\mathbf{x}_2$.
+
+\begin{definition}[Línea base y Epípolos]
+    La recta que une de forma directa ambos centros ópticos, $\overline{\mathbf{C}_1 \mathbf{C}_2}$, recibe el nombre de \textit{línea base}. Se denominan \textit{epípolos} a los puntos de intersección de esta recta con los planos imagen, denotados como $\mathbf{e}_1$ y $\mathbf{e}_2$. 
+\end{definition}
+
+\vspace{2ex}
+
+Algebraicamente, se puede calcular el epípolo como la proyección del centro óptico de una cámara en el plano de la otra:
+\[
+    \mathbf{e}_1 = P_1 \mathbf{C}_2, \quad \mathbf{e}_2 = P_2 \mathbf{C}_1
+\]
+
+\begin{definition}[Líneas epipolares]
+    Llamaremos \textit{líneas epipolares} a las intersecciones del plano epipolar $\pi$ con los planos imagen de ambas cámaras, denotadas por $\mathbf{l}_1$ y $\mathbf{l}_2$. 
+\end{definition}
+
+\vspace{2ex}
+
+\begin{observacion}
+    Dado que todos los planos epipolares posibles deben contener a la línea base, el conjunto de puntos de la escena genera un haz de planos epipolares cuyo eje es dicha línea base. Esto se traduce en un haz de líneas epipolares en cada plano imagen que convergen obligatoriamente en sus respectivos epípolos $\mathbf{e}_1$ y $\mathbf{e}_2$.
+\end{observacion}
+
+\subsection{La Matriz Fundamental}
+
+La matriz fundamental es la representación algebraica de la geometría epipolar que establece la correspondencia geométrica entre dos vistas. A diferencia de una homografía, no constituye una aplicación punto a punto, sino una correlación proyectiva $F: P\mathbb{R}^2 \longrightarrow P\mathbb{R}^{2*}$, donde $P\mathbb{R}^{2*}$ es el espacio de las rectas del proyectivo $P\mathbb{R}^2$. Esta aplicación asigna a cada punto homogéneo de la primera imagen su recta epipolar correspondiente en el otro plano imagen. Algebraicamente, se representa mediante una matriz de dimensiones $3 \times 3$.
+
+A continuación, se desarrolla la deducción analítica para obtener la expresión explícita de dicha matriz.
+
+\subsubsection{Derivación de la Matriz Fundamental}
+
+La deducción de la matriz fundamental se obtiene construyendo algebraicamente la recta epipolar $\mathbf{l}_2$ a partir del rayo óptico retroproyectado desde la primera cámara.
+
+Para un punto $\mathbf{x}_1$ en la primera imagen, el rayo óptico correspondiente en el espacio tridimensional está constituido por la recta que une el centro óptico $\mathbf{C}_1$ con el conjunto de puntos del espacio que se proyectan en $\mathbf{x}_1$. Un punto particular de este rayo se puede obtener algebraicamente utilizando la pseudoinversa de la matriz de cámara, denotada como $P_1^+$, esto es $P_1^+ \in \mathbf{M}_{3 \times 4}$ tal que, $P_1 P_1^+ = I_{3 \times 3}$. Usando esto, el punto tridimensional $\mathbf{X} = P_1^+ \mathbf{x}_1$ pertenece a dicho rayo, puesto que $P_1 \mathbf{X} = P_1 (P_1^+ \mathbf{x_1}) = \mathbf{x}_1$.
+
+La línea epipolar $\mathbf{l}_2$ en la segunda vista es la proyección geométrica de este rayo óptico bajo la acción de la segunda cámara $P_2$. En el plano dual $\mathbb{P}^{2*}$, una recta queda unívocamente definida por el producto vectorial de dos puntos distintos que pertenezcan a ella. Por tanto, se proyectan los dos puntos tridimensionales conocidos del rayo sobre la segunda imagen:
+
+\begin{enumerate}
+    \item La proyección del centro óptico de la primera cámara, $\mathbf{C}_1$, es por definición el segundo epípolo:
+    \[
+        \mathbf{e}_2 = P_2 \mathbf{C}_1
+    \]
+    \item La proyección del punto retroproyectado $\mathbf{X}$ proporciona un segundo punto de referencia sobre el plano imagen:
+    \[
+        \mathbf{x}'_2 = (P_2 P_1^+) \mathbf{x}_1
+    \]
+\end{enumerate}
+
+La línea epipolar se calcula como la recta homogénea que interseca ambos puntos proyectados mediante el producto vectorial:
+\[
+    \mathbf{l}_2 = \mathbf{e}_2 \times \mathbf{x}'_2 = [\mathbf{e}_2]_\times (P_2 P_1^+ \mathbf{x}_1)
+\]
+donde $[\mathbf{e}_2]_\times$ representa la matriz antisimétrica de rango 2 asociada al vector del epípolo. 
+
+Por asociatividad del producto matricial, la ecuación se reescribe como:
+\[
+    \mathbf{l}_2 = \left( [\mathbf{e}_2]_\times P_2 P_1^+ \right) \mathbf{x}_1
+\]
+
+De aquí, se deduce la expresión analítica explícita general para la Matriz Fundamental:
+\begin{equation}
+    F = [\mathbf{e}_2]_\times P_2 P_1^+
+\end{equation}
+
+\subsubsection{La restricción epipolar y propiedades de la matriz fundamental}
+
+Finalmente, la restricción de incidencia que estipula que el punto homólogo real $\mathbf{x}_2$ debe yacer sobre su línea epipolar ($\mathbf{x}_2^T \mathbf{l}_2 = 0$) conduce a la ecuación fundamental de la geometría de dos vistas:
+\begin{equation}
+    \mathbf{x}_2^{T} F \mathbf{x}_1 = 0
+\end{equation}
+
+Esto se debe cumplir ya que, si $\mathbf{x}_1$ corresponde con $\mathbf{x}_2$, entonces, $\mathbf{x_2} \in F \mathbf{x_1} = l_2 \Longrightarrow  \mathbf{x_2}^T l_2 =  \mathbf{x_2}^t F  \mathbf{x_1} = 0$ . Esto significa que los puntos de los centros ópticos $\mathbf{C}_1, \mathbf{C}_2$ y las proyecciones $\mathbf{x}_1, \mathbf{x}_2$ de un punto tridimensional deben ser coplanarios.
+
+Esta relación es la base analítica de la geometría de dos vistas. Las propiedades fundamentales de la matriz $F$ son las siguientes:
 
 \begin{itemize}
-    \item La matriz fundamental es única y con rango 2, es decir, su determinante es igual a 0. 
-    \item Si F es la matriz fundamental de dos cámaras (P,P') entonces $F^{T}$ es la matriz de las cámaras (P',P). 
-    \item A partir de la matriz fundamental puedo obtener la línea epipolar de la segunda imagen que corresponde a un punto de la primera l'=F$p_1$. Inversamente la operación sería l=$F^{T}$$p_2$'.
-    \item Como los epípolos pertenecen al haz de rectas epipolares, se tiene que $e_2^{T}$(Fx) = 0 para cualquier x, lo que implica que $e_2^{T}$F = 0 y a su vez F$e_1$ = 0.
+    \item \textbf{Rango y singularidad:} $F$ es una matriz homogénea de tamaño $3 \times 3$ con rango estricto 2, lo que implica que $\det(F) = 0$.
+    \item \textbf{Transposición:} Si $F$ es la matriz fundamental del par de cámaras $(P_1, P_2)$, entonces $F^{T}$ es la matriz fundamental del par inverso $(P_2, P_1)$.
+    \item \textbf{Correlación epipolar:} Para cualquier punto $\mathbf{x}_1$ en la primera imagen, su línea epipolar correspondiente en la segunda es $\mathbf{l}_2 = F \mathbf{x}_1$. Inversamente, $\mathbf{l}_1 = F^{T} \mathbf{x}_2$.
+    \item \textbf{Espacios nulos (Epípolos):} Como el epípolo $\mathbf{e}_2$ pertenece a todas las líneas epipolares de la segunda imagen, satisface $\mathbf{e}_2^{T} \mathbf{l}_2 = 0$ para todo $\mathbf{x}_1$. Por consiguiente, los epípolos conforman los espacios nulos a izquierda y derecha de la matriz: $\mathbf{e}_2^{T} F = \mathbf{0}$ y $F \mathbf{e}_1 = \mathbf{0}$.
 \end{itemize}
 
-Respecto a los grados de libertad de la matriz F, tiene 8 grados de libertad por ser homogénea, pero al tener F que satisfacer que su det F = 0 entonces se queda en 7 grados de libertad.  Otra forma de justificar sus 7 grados es mediante los grados de sus componentes. Los epípolos tienen 2 grados de libertad cada uno y luego son 3 grados de libertad para la homografía que relaciona el haz de lineas epipolares de cada imagen.
-
-Para terminar veamos que la homografía nos permite calcular líneas epipolares a partir de sus correspondientes en la otra imagen. Supongamos que tenemos una recta que denotaremos por r que no pasa por el epípolo de la primera imagen. La intersección de r con l nos da un punto $p_1$. Como $p_1 \in l$ la linea epipolar correspondiente a la recta epipolar l es la misma que la que corresponde a $p_1$. 
-
-\begin{equation}
-    l_2 = F p_1 
-\end{equation}
+Respecto a su parametrización, una matriz de $3 \times 3$ posee 9 elementos. Al estar definida salvo un factor de escala, es una matriz homogénea, sus grados de libertad se reducen a 8. La restricción adicional de singularidad, es decir $\det(F)=0$, deja a la matriz fundamental con \textbf{7 grados de libertad}. Geométricamente, esto equivale a los 4 grados de libertad de ambos epípolos sumados a los 3 grados de la transformación proyectiva 1D que relaciona los haces de rectas epipolares.
 
 \subsubsection{Estructura de la Matriz Fundamental}
-Vamos a estudiar la estructura de la matriz fundamental. Esta matriz a diferencia de otras matrices de transformaciones, se puede descomponer en el producto de una homografía y una matriz antisimétrica.
-\begin{equation}
-    F = [e_2]_\times H
-\end{equation}
-Donde $[e_2]_\times$ representa la matriz antisimétrica del segundo epípolo, que en este caso ejecuta el producto vectorial, y una homografía $H$ que relaciona los planos de las imágenes. Al tratarse de una composición de ambas matrices, como la matriz antisimétrica tiene rango 2 y la Homografía rango 3, el producto de ambas determina el rango de F.
-\begin{equation}
-    \text{rango}(F) = \text{rango}([e_2]_\times H) = 2
-\end{equation}
+La matriz fundamental se puede descomponer analíticamente en el producto de una matriz antisimétrica y una homografía general:
 
-Además, la matriz $H$ se relaciona con las matrices de las cámaras $M_1$ y $M_2$. Al coger un rayo óptico desde $C_1$ que corta a su imagen en $p_1$ de un punto cualquiera de la escena y proyectarlo sobre la segunda se obtiene la homografía interna:
-\begin{equation}
-    H = M_2 M_1^{+}
-\end{equation}
+\[
+    F = [\mathbf{e}_2]_\times H
+\]
+Donde $[\mathbf{e}_2]_\times$ representa la representación matricial del producto vectorial por el segundo epípolo y $H$ es una homografía proyectiva. Dado que la matriz antisimétrica tiene rango 2 y la homografía rango 3, el producto preserva la singularidad estipulada:
 
-Al sustituir este resultado en la primera fórmula obtenemos la relación de la matriz fundamental con las matrices de las cámaras: 
-\begin{equation}
-    F = [e_2]_\times M_2 M_1^{+}
-\end{equation}
+\[
+    \text{rango}(F) = \text{rango}([\mathbf{e}_2]_\times H) = 2
+\]
+
+Si se emplea la pseudoinversa de la primera cámara ($P_1^+$) para retroproyectar el rayo óptico y transferirlo a la segunda vista, la homografía interna toma la forma $H = P_2 P_1^{+}$. Sustituyendo este resultado, se obtiene la formulación explícita general:
+
+\[
+    F = [\mathbf{e}_2]_\times P_2 P_1^{+}
+\]
 
 \subsubsection{Cálculo de la Matriz Fundamental}
-Una vez estudiada la estructura de la matriz fundamental, pasamos al problema del cálculo práctico de dicha matriz. Existen múltiples métodos de estimación de cálculo de la matriz fundamental. En este caso, vamos a comenzar por el algoritmo de 8 puntos.
-\paragraph{El Algoritmo Lineal de los 8 Puntos}~\\
-Este algoritmo ideado por el químico británico Longuet-Higgins, tiene como  objetivo determinar la matriz F a partir de las correspondencias entre las imágenes de 8 puntos de la escena. Para este apartado, denominaremos los puntos como $x_i$ y su correspondiente $x'_i$.
+Existen múltiples métodos para estimar $F$ a partir de correspondencias de puntos bidimensionales. Se exponen a continuación los dos enfoques lineales clásicos.
 
-El primer paso del algoritmo es aplicar la normalización de Hartley a las imagenes $x_i$ y $x'_i$. Para ello, tendremos $\hat x_i=Tx_i$ y $\hat x'_i=T'x'_i$ donde T y T' son las transformaciones que convierten el centro de los puntos para que coincida con el origen $(0,0)^T$ y luego escalar las coordenadas para que la distancia media con el nuevo origen sea $\sqrt2$.
+\paragraph{El Algoritmo de los 8 Puntos Normalizado}~\\
+Este algoritmo estima la matriz $F$ resolviendo un sistema lineal sobredeterminado a partir de $n \ge 8$ correspondencias de puntos $(\mathbf{x}_i, \mathbf{x}'_i)$.
 
-El segundo paso consiste en calcular la solución lineal. Al tener 8 parejas de puntos, cada pareja genera una ecuación de la forma  $\hat{x'}_i^{T} \hat{F} \hat{x}_i = 0$ para resolver el sistema con 9 incógnitas.Con esas ecuaciones, obtenemos la matriz $\hat A$.  A esta $\hat{A}$ se le aplica la Descomposición en Valores Singulares (SVD) para minimizar el error de píxeles.  
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.9\linewidth]{problemaError.png}
-    \caption{En esta figura se observa las correspondencias entre dos imágenes, donde las líneas verdes representan las relaciones de puntos. Pero las rectas entre sí no son todas paralelas, de ahí surge el posible error}
-    \label{fig:error}
-\end{figure}
+\begin{enumerate}
+    \item \textbf{Normalización (Hartley):} Se aplican transformaciones afines $T$ y $T'$ a las coordenadas de la imagen para trasladar el centroide de los puntos al origen $(0,0)^T$ y escalar su distancia media al origen a $\sqrt{2}$. Las coordenadas normalizadas son $\hat{\mathbf{x}}_i=T \mathbf{x}_i$ y $\hat{\mathbf{x}}'_i=T' \mathbf{x}'_i$.
+    \item \textbf{Solución lineal:} Cada par genera una ecuación $\hat{\mathbf{x}}'^T_i \hat{F} \hat{\mathbf{x}}_i = 0$. Apilando las ecuaciones se forma un sistema $A \mathbf{f} = \mathbf{0}$, donde $\mathbf{f}$ contiene los elementos de $\hat{F}$. La solución se obtiene calculando el vector propio asociado al menor valor singular de $A$ mediante la Descomposición en Valores Singulares (SVD).
+    \item \textbf{Imposición de rango 2:} Se descompone la matriz resultante $\hat{F}$ mediante SVD, se anula su menor valor singular y se recompone para obtener una matriz $\hat{F}'$ estrictamente singular.
+    \item \textbf{Desnormalización:} Finalmente, la matriz se proyecta de vuelta al espacio de coordenadas original:
+    \begin{equation}
+        F = T'^{T} \hat{F}' T
+    \end{equation}
+\end{enumerate}
 
-A continuación, forzamos a que el rango de $\hat F$ sea 2, aplicando de nuevo SVD, dándonos como resultado la matriz  $\hat F'$
-
-Para terminar, una vez obtenido $\hat F$ debemos desnormalizar para obtener F en las coordenadas originales de los $x_i$ de nuestras imágenes. Para ello, aplicamos la siguiente operación: 
+\paragraph{El Algoritmo de los 7 Puntos}~\\
+Aprovechando que $F$ posee 7 grados de libertad, es posible resolver el sistema utilizando un conjunto mínimo de 7 correspondencias.
+En este caso, el sistema lineal homogéneo $A \mathbf{f} = \mathbf{0}$ posee un espacio nulo de dimensión 2. Por tanto, la matriz se expresa como una combinación lineal de las dos matrices base:
 \begin{equation}
-    F = T'^{T} \hat{F}' T
+    F = \alpha F_1 + (1-\alpha)F_2
 \end{equation}
-Con ello obtenemos la matriz F. Cabe recalcar que dicha matriz es única salvo movimiento, ya que el movimiento de ambas cámaras e imágenes mantiene las relaciones epipolares entre ellas. Si solo se produce un movimiento para una de ellas entonces F si va a variar.
+Al imponer la restricción de singularidad $\det(F) = 0$, se genera un polinomio cúbico en $\alpha$, el cual proporciona 1 o 3 soluciones reales. Se selecciona la matriz que minimice el error geométrico sobre el conjunto completo de datos.
+
+\subsubsection{Estimación Robusta mediante RANSAC}
+En un escenario real, las correspondencias automáticas contienen valores atípicos (outliers). Para estimar $F$ de forma robusta, se integra el algoritmo de 7 u 8 puntos dentro del bucle probabilístico RANSAC:
+
+\begin{enumerate}
+    \item \textbf{Extracción y Emparejamiento:} Se detectan puntos de interés (keypoints) en ambas imágenes y se establecen correspondencias tentativas basadas en descriptores locales.
+    \item \textbf{Muestreo iterativo:} Durante $N$ iteraciones:
+    \begin{enumerate}
+        \item Se selecciona aleatoriamente un subconjunto mínimo (ej. 7 u 8 correspondencias) para instanciar una matriz candidata $F_k$.
+        \item Se evalúa el consenso general computando el error de todos los pares frente a $F_k$ (generalmente la distancia de Sampson o la distancia epipolar ortogonal $d_\perp$).
+        \item Se contabiliza el número de \textit{inliers} (correspondencias con error inferior a un umbral $\tau$).
+    \end{enumerate}
+    \item \textbf{Reestimación final:} Se retiene la matriz $F$ que maximice el soporte (mayor número de \textit{inliers}). Finalmente, se recalcula $F$ aplicando el algoritmo de 8 puntos normalizado utilizando exclusivamente todo el conjunto de \textit{inliers} validados.
+\end{enumerate}
+
+\subsection{Matriz Esencial}
 
 
 
