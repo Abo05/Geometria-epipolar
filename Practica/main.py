@@ -1,5 +1,4 @@
 """
-main.py — Pipeline estéreo automático
 Uso: python main.py im0.png im1.png
 """
 
@@ -9,14 +8,14 @@ import cv2
 from calculos import stereo_depth
 
 
-# ============================================================
+# ===============================================
 # DETECCIÓN AUTOMÁTICA DE CORRESPONDENCIAS (SIFT)
-# ============================================================
+# ===============================================
 
 def find_correspondences(img_left, img_right, max_features=2000):
     """
-    Detecta correspondencias entre las dos imágenes usando SIFT + ratio test.
-    Devuelve pts1, pts2 arrays (N, 2) listos para pasar a stereo_depth.
+    Detecta correspondencias entre las dos imágenes usando SIFT y ratio test.
+    Devuelve pts1, pts2 arrays listos para pasar a stereo_depth.
 
     Sift detecta keypoints y descriptores:
     Keypoints: Guardan la localización exacta del punto en la imagen.
@@ -38,10 +37,11 @@ def find_correspondences(img_left, img_right, max_features=2000):
     matches = bf.knnMatch(des1, des2, k=2)
 
     # Ratio test de Lowe — filtra matches ambiguos
-    # Solo si el más parecido es claramente mejor que el segundo se coje,
+    # Solo si el más parecido es claramente mejor que el segundo se mantiene,
     # en otro caso se filtra
     good = [m for m, n in matches if m.distance < 0.75 * n.distance]
 
+    #El algoritmo utilizado para calcular F necesita al menos 8 puntos
     if len(good) < 8:
         raise RuntimeError(f"Solo {len(good)} matches tras el ratio test. Necesita al menos 8.")
 
@@ -69,7 +69,7 @@ def normalize_depth_for_display(depth):
     """
     Normaliza el mapa de profundidad a uint8 ignorando los píxeles
     inválidos (depth == 0), que calculos.py marca así cuando la
-    disparidad era menor que min_disp.
+    disparidad es menor que min_disp.
 
     Sin esto, el valor 0 (sin datos) entra en el rango de normalización
     como si fuera la profundidad mínima, aplastando todo el detalle
@@ -120,7 +120,6 @@ def main() :
     print("Ejecutando pipeline estéreo...")
     # Delegamos todos los cálculos a esta función
     # Pasamos las imágenes y las correspondencias
-    # Lo demás son valores por defecto que dan buenos resultados
     disp, depth, imgLr, imgRr, F, mask = stereo_depth(
         imgL, imgR, pts1, pts2,
     )
