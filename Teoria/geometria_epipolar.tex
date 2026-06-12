@@ -27,7 +27,6 @@ oneside, % One page layout (no page indentation)
 headinclude,footinclude, % Extra spacing for the header and footer
 BCOR=5mm, % Binding correction
 ]{scrartcl}
-
 \input{structure.tex} % Include the structure.tex file which specified the document structure and layout
 
 \hyphenation{Fortran hy-phen-ation} % Specify custom hyphenation points in words with dashes where you would like hyphenation to occur, or alternatively, don't put any dashes in a word to stop hyphenation altogether
@@ -799,11 +798,86 @@ En un escenario real, las correspondencias automáticas contienen valores atípi
 \end{enumerate}
 
 \subsection{Matriz Esencial}
+El británico Christopher Longuet-Higgins introdujo la noción de matriz esencial con anterioridad a la matriz fundamental. 
+\begin{definition}[Cámara normalizada]
+Una cámara normalizada se conceptualiza como una cámara ideal, tal que su distancia focal es unitaria.
+\end{definition}
+Esta matriz presupone dos cámaras normalizadas; por tanto, dado un par de cámaras $(C_1,1)$ y $(C_2,1)$, tenemos los puntos normalizados $\hat{x_1}$ y $\hat{x_2}$, tales que cumplen con la restricción epipolar: 
+\begin{equation}
+    \mathbf{\hat{x}}_2^{T} E \mathbf{\hat{x}}_1 = 0
+\end{equation}
+Por tanto, la matriz fundamental se considera una generalización de la matriz esencial donde se deja de asumir que las cámaras son normalizadas.  A continuación, se definen las propiedades de la matriz esencial:
+\subsubsection{Propiedades de la Matriz Esencial}
+La matriz esencial mantiene las propiedades estructurales de la matriz fundamental. Sin embargo, al tratarse de cámaras normalizadas tiene otras restricciones: 
+\begin{itemize}
+    \item \textbf{Rango y singularidad:} La matriz $E$, al igual que $F$, se trata de una matriz homogénea de tamaño $3 \times 3$ con rango estricto 2. Por tanto se deduce que el $\det(E) = 0$.
+    \item \textbf{Grados de libertad:} A diferencia de los 7 grados de libertad de $F$, $E$ tiene \textbf{5 grados de libertad}. El rango estricto 2 determina que $E$ tiene 7 grados de libertad como $F$. Pero la restricción adicional impuesta por las cámaras normalizadas obliga a que dos valores singulares sean iguales, lo que reduce los grados de libertad a 5.
+    \item \textbf{Valores singulares:} La matriz es esencial si y solo si cumple que sus valores singulares son de la forma: $(\sigma,\sigma,0)$, tal que $\sigma>0$. 
+\end{itemize}
 
+\subsubsection{Deducción de la Matriz Esencial}
+La deducción de la matriz esencial sigue el desarrollo utilizado para la matriz fundamental, con la restricción de cámaras normalizadas. Sin pérdida de generalidad, situamos el centro óptico de la primera cámara en $(0,0,0)^t$ y la segunda cámara queda determinada por una traslación $t$ y una rotación $R$. 
 
+\begin{enumerate}
+    \item El epípolo $\hat{e}_2$ es la proyección de $C_1$ sobre la segunda imagen. Al ser $C_1$ el origen y la segunda cámara normalizada, se cumple:
+    \[
+        \mathbf{\hat{e}}_2 = t
+    \]
+    \item Para un punto $\hat{x}_1$ de la primera imagen, visto desde la segunda cámara, se obtiene mediante una rotación:
+    \[
+        \mathbf{\hat{x}}'_2 = R\hat{x_1}
+    \]
+\end{enumerate}
 
+Como la línea epipolar la definimos como el producto vectorial del epipolo por la proyección: 
+\begin{equation}
+    \mathbf{\hat{l}}_2 = \mathbf{\hat{e}}_2 \times \mathbf{\hat{x}}'_2 = [\mathbf{t}]_\times \left( R \mathbf{\hat{x}}_1 \right)
+\end{equation}
 
+Imponiendo $\mathbf{\hat{x}}_2 \in \mathbf{\hat{l}}_2$,es decir, ${\hat{x}}_2\hat{l}_2=0$ se obtiene la siguiente ecuación:
+\begin{equation}
+    \mathbf{\hat{x}}_2^T \left( [\mathbf{t}]_\times R \right) \mathbf{\hat{x}}_1 = 0
+\end{equation}
 
+Comparando con la restricción epipolar, se obtiene: 
+\begin{equation}
+    E = [\mathbf{t}]_\times R
+\end{equation}
+
+\subsubsection{La extracción de cámaras a partir de la Matriz Esencial}Dada una matriz esencial, la primera cámara puede fijarse como $P_1=(I|0)$. La segunda cámara se obtiene a partir de la factorización de $E$ mediante la Descomposición en Valores Singulares. Por ser $E$ una matriz $3 \times 3$ y de $rangoE=2$, el Teorema de Descomposición en Valores Singulares garantiza la existencia de matrices ortogonales U y V tales que:
+\begin{equation}
+    E = Udiag(\sigma,\sigma,0)V^T 
+\end{equation}
+Dado que E es una matriz homogénea, sin pérdida de generalidad podemos fijar $\sigma=1$:
+\begin{equation}
+    E = Udiag(1,1,0)V^T 
+\end{equation}
+De esta ecuación se deduce que $u_3=t$, siendo $u_3$ la última columna de la matriz $U$. Esto se debe a las propiedades $\hat{e}_2=t$ y $E\hat{e}_2=0$,tal que $\hat{e}_2$ pertenece al núcleo de $E$. En la ecuación, el único vector en dicho núcleo es el $u_3$. 
+
+A partir del resultado aparecen dos ambigüedades independientes:
+\begin{itemize}
+    \item \textbf{Ambigüedad en la rotación:} La factorización de $E$ no es única; Existen dos rotaciones $R_1$ y $R_2$ compatibles con $E$. Este suceso es consecuencia directa de que los valores singulares de $E$ no nulos son iguales. Al ser iguales, la factorización admite dos soluciones distintas para la rotación compatibles con la matriz esencial.
+    \item \textbf{Ambigüedad en la traslación:} Dado que $E$ es homogénea, el sistema provoca que $E$ y $-E$ sean indistinguibles. Por tanto no se puede determinar el signo de $u_3$. 
+\end{itemize}
+
+A partir de estas ambigüedades se deduce que el problema tiene 4 soluciones. estas soluciones tienen la forma:
+\begin{equation}
+    P_2 \in \left\{ [R_1 \mid +u_3],\ [R_1 \mid -u_3],\ [R_2 \mid +u_3],\ [R_2 \mid -u_3] \right\}
+\end{equation}
+
+Las relaciones de las soluciones de $P_2$ se definen de la siguiente manera:
+\begin{itemize}
+    \item \textbf{Variación en la traslación:} Las soluciones 1,2,3 y 4 difieren dos a dos únicamente en el signo de la traslación.
+    \item \textbf{Variación en la rotación:} Las soluciones 1 y 3 se diferencian en la rotación. Una de las rotaciones es el resultado de aplicar una rotación de $180^{\circ}$ a la otra rotación. Esta ambigüedad se conoce como  \textbf{par trenzado}. 
+\end{itemize}
+
+Para calcular la solución correcta, se toma un punto $X$ cualquiera de la escena y se busca el par de matrices $P_1$ y $P_2$ tal que dicho punto se encuentre delante de ambas cámaras. En dos de ellas quedará detrás de una de las cámaras y en la última detrás de ambas. Por tanto basta con buscar una relación de puntos $x_1$ y $x_2$ para este cálculo.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{imagen_esencial.png}
+    \caption{Esta figura nos muestra las 4 soluciones del problema. Como se observa solo la solución a) es válida.}
+    \label{fig:Esencial}
+\end{figure}
 
 %----------------------------------------------------------------------------------------
 %	RESULTS AND DISCUSSION
