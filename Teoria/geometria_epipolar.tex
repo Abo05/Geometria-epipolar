@@ -800,10 +800,150 @@ En un escenario real, las correspondencias automáticas contienen valores atípi
 
 \subsection{Matriz Esencial}
 
+%----------------------------------------------------------------------------------------
+%	USOS GEOMETRIA EPIPOLAR
+%----------------------------------------------------------------------------------------
+
+\section{Usos de la geometría epipolar}
+Finalmente, hemos puesto en práctica nuestros conocimientos de geometría epipolar
+en un programa que calcula un mapa de profundidad dadas dos imágenes estéreo.
+Las imágenes utilizadas están realizadas por cámaras con la misma referecia cartesiana
+y distancia focal.
+
+En este programa hacemos el cálculo de la matriz fundamental con el 
+algorimto de los 8 puntos normalizado y creamos una estimación robusta con RANSAC.
 
 
+\subsubsection{Rectificación de imágenes}
 
+Con la matriz fundamental estimada, el siguiente paso es la
+\textit{rectificación} del par estéreo. El objetivo es transformar
+ambas imágenes mediante homografías $H_1$ y $H_2$ de forma que las
+líneas epipolares, que en general son oblicuas, queden alineadas
+horizontalmente y compartan la misma coordenada $y$ en ambas imágenes.
 
+Para lograrlo, se construye una homografía que envía el
+epípolo de cada imagen al punto del infinito $(1, 0, 0)^T$, haciendo
+que todas las líneas epipolares sean paralelas al eje $X$. Los pasos
+son los siguientes:
+
+\begin{enumerate}
+    \item \textbf{Traslación:} Se traslada el centro de la imagen al
+    origen de coordenadas.
+    \item \textbf{Rotación:} Se rota la imagen para que el epípolo,
+    expresado en coordenadas relativas al centro, quede alineado con
+    el eje $X$ positivo.
+    \item \textbf{Transformación proyectiva:} Se aplica una
+    transformación $G$ que envía el epípolo al infinito.
+\end{enumerate}
+
+La restricción fundamental que debe satisfacerse es que la escala y
+el desplazamiento vertical sean compartidos entre $H_1$ y
+$H_2$. Si cada homografía escalara su imagen de forma independiente,
+una fila $y = k$ en la imagen izquierda rectificada no correspondería
+a la fila $y = k$ en la derecha, invalidando la búsqueda horizontal
+de correspondencias. Solo el desplazamiento horizontal puede diferir
+entre ambas transformaciones, pues es precisamente esa diferencia la
+que codifica la disparidad.
+
+\subsubsection{Cálculo de la Disparidad}
+
+Una vez rectificadas las imágenes, la búsqueda de correspondencias
+se reduce a un problema unidimensional: dado un píxel $(x, y)$ en
+la imagen izquierda, su correspondiente en la imagen derecha se
+encuentra necesariamente en la misma fila $y$, desplazado
+horizontalmente una cantidad $d$ denominada \textit{disparidad}.
+
+\begin{definition}[Disparidad]
+    Dados dos puntos correspondientes $\mathbf{x}_L = (x, y)$ en la
+    imagen izquierda y $\mathbf{x}_R = (x', y)$ en la imagen derecha,
+    se define la disparidad como:
+    \[
+        d = x - x'
+    \]
+\end{definition}
+
+\subsubsection{Dirección del desplazamiento}
+
+La dirección del desplazamiento no es arbitraria: viene determinada
+por la geometría del par estéreo. Sabiendo qué imagen corresponde
+a la cámara izquierda y cual a la derecha, observamos que un objeto 
+de la escena aparece desplazado hacia la \textit{izquierda} en la 
+imagen derecha respecto a su posición en la imagen izquierda. Por tanto, 
+la disparidad $d$ es siempre no negativa, y la búsqueda se realiza exclusivamente 
+en la dirección $x' = x - d$ con $d \in [0, d_{\max})$.
+
+Es necesario tener esta información, pues invertir esta dirección produce 
+un mapa de disparidad sistemáticamente incorrecto, con valores altos donde 
+deberían ser bajos y viceversa. Conocer qué cámara está a la derecha de cuál 
+es, por tanto, un requisito previo al cómputo.
+
+\subsubsection{Relación entre disparidad y profundidad}
+
+La relación entre disparidad y profundidad se deduce por semejanza de triángulos
+aplicada dos veces sobre el diagrama del par estéreo rectificado. Considera dos
+cámaras separadas una distancia $B$ (\textit{baseline}), ambas con distancia focal
+$f$ y con sus planos de imagen coplanarios tras la rectificación. Un punto
+$\mathbf{X}$ del espacio a profundidad $Z$ se proyecta en $x_L$ en la cámara
+izquierda y en $x_R$ en la derecha.
+
+Suponemos, sin perdida de generalidad que el centro óptico de la cámara izquierda
+está en el origen. Para la cámara izquierda la semejanza de triángulos da:
+\[
+    \frac{x_L}{f} = \frac{X}{Z} \implies x_L = \frac{fX}{Z}
+\]
+
+Para la cámara derecha, cuyo centro óptico está desplazado $B$ en el eje $X$,
+el mismo punto tiene coordenada $X - B$ relativa a ese centro:
+\[
+    \frac{x_R}{f} = \frac{X - B}{Z} \implies x_R = \frac{f(X-B)}{Z}
+\]
+
+La disparidad es la diferencia de ambas proyecciones:
+\[
+    d = x_L - x_R = \frac{fX}{Z} - \frac{f(X-B)}{Z} = \frac{fB}{Z}
+\]
+
+Despejando $Z$:
+\begin{equation}
+    Z = \frac{f \cdot B}{d}
+    \label{eq:depth}
+\end{equation}
+
+Los términos $X$ se cancelan exactamente, lo que refleja el hecho geométrico
+de que la profundidad depende únicamente del desplazamiento horizontal entre
+las dos proyecciones, no de la posición lateral del punto en la escena.
+
+De la ecuación \eqref{eq:depth} se desprenden dos consecuencias
+directas: los objetos cercanos presentan disparidades grandes, y los
+objetos lejanos tienden a disparidad cero. Las zonas con $d = 0$
+no tienen correspondencia válida y se marcan como indefinidas en
+el mapa de profundidad.
+
+El rango de búsqueda $[0, d_{\max})$ es un parámetro crítico del
+algoritmo. Un valor demasiado pequeño impide encontrar correspondencias
+de objetos muy cercanos, uno demasiado grande introduce falsos matches
+en zonas sin textura.
+
+\subsubsection{Zonas sin correspondencia}
+
+No todos los píxeles tienen una correspondencia válida en la otra
+imagen. Existen dos causas principales:
+
+\begin{itemize}
+    \item \textbf{Oclusiones:} regiones visibles desde una cámara
+    pero ocultas desde la otra por un objeto interpuesto. Son
+    inevitables en cualquier par estéreo con baseline no nula.
+    \item \textbf{Regiones sin textura:} zonas uniformes donde la
+    métrica de comparación produce el mismo coste para múltiples
+    disparidades. En estos casos se puede aplicar un test de unicidad 
+    que descarta el match si el segundo mejor candidato es demasiado parecido
+    al mejor.
+\end{itemize}
+
+Ambos casos se manifiestan como píxeles con $d = 0$ en el mapa
+de disparidad y, por la ecuación \eqref{eq:depth}, como zonas
+negras en el mapa de profundidad.
 
 %----------------------------------------------------------------------------------------
 %	RESULTS AND DISCUSSION
