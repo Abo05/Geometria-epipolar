@@ -432,7 +432,7 @@ def compute_disparity(img0, img1, max_disp=64, block_size=9,
 # 6. CONVERSIÓN DE DISPARIDAD A PROFUNDIDAD RELATIVA
 # ============================================================
 
-def disparity_to_depth(disp, baseline=1.0, focal=1.0, min_disp=0.5):
+def disparity_to_depth(disp, baseline=111.53, focal=1758.23, min_disp=0.1):
     """
     Convierte un mapa de disparidad en un mapa de profundidad gracias 
     a la relación geométrica fundamental en estéreo rectificado:
@@ -445,8 +445,10 @@ def disparity_to_depth(disp, baseline=1.0, focal=1.0, min_disp=0.5):
         disparity -> desplazamiento horizontal entre correspondencias
 
     Nota importante:
-    La profundidad aquí es relativa si focal y baseline no están
-    calibrados en unidades métricas reales.
+    La profundidad es relativa si focal y baseline no están
+    calibrados en unidades métricas reales y los tomamos como 1.0 ambos.
+    En nuestro caso, hemos puesto los valores proporcionados por middlebury
+    stereo dataset para las imágenes utilizadas.
     """
     depth = np.zeros_like(disp, dtype=np.float32)
 
@@ -467,13 +469,49 @@ def disparity_to_depth(disp, baseline=1.0, focal=1.0, min_disp=0.5):
 
     return depth
 
-# ============================================================
-# 7. PIPELINE COMPLETO
-# ============================================================
+# ==========================
+# 7. CALCULO MATRIZ ESENCIAL 
+# ==========================
+def compute_essential(F, K1, K2):
+    """
+    Calcula la matriz esencial a partir de la fundamental y las
+    matrices de calibración intrínseca.
+    E = K2^T · F · K1
+    """
+    return K2.T @ F @ K1
+
+def decompose_essential(E, K, pts1, pts2, mask):
+    """
+    Descompone la matriz esencial en rotación y traslación.
+    
+    La SVD de E produce 4 soluciones posibles (R1/R2 x t/-t).
+    cv2.recoverPose resuelve la ambigüedad eligiendo la solución
+    en la que el mayor número de puntos queda delante de ambas cámaras
+    (test del semiplano positivo).
+    """
+    pts1_in = pts1[mask].astype(np.float32)
+    pts2_in = pts2[mask].astype(np.float32)
+
+    _, R, t, _ = cv2.recoverPose(E, pts1_in, pts2_in, K)
+
+    # Ángulo de rotación total en grados
+    angle = np.degrees(np.arccos(np.clip((np.trace(R) - 1) / 2, -1, 1)))
+
+    # Dirección de traslación normalizada
+    t_norm = t.flatten() / (np.linalg.norm(t) + 1e-10)
+
+    print("Geometría entre cámaras:")
+    print(f"Ángulo de rotación total:     {angle:.2f}°")
+    print(f"Dirección de traslación:      X={t_norm[0]:+.3f}  Y={t_norm[1]:+.3f}  Z={t_norm[2]:+.3f}")
+
+
+# ====================
+# 8. PIPELINE COMPLETO
+# ====================
 
 def stereo_depth(imgL, imgR, pts1, pts2,
-                 use_ransac=True, threshold_px=1.5, ransac_iters=1000,
-                 max_disp=64, block_size=15):
+                 threshold_px=1.5, ransac_iters=1000,
+                 max_disp=290, block_size=15):
     """
     Pipeline completo de visión estéreo:
 
@@ -497,6 +535,14 @@ def stereo_depth(imgL, imgR, pts1, pts2,
         threshold_px=threshold_px,
         iterations=ransac_iters,
     )
+
+    K = np.array([[1758.23, 0, 953.34],
+              [0, 1758.23, 552.29],
+              [0, 0, 1]])
+
+    E = compute_essential(F, K, K)
+
+    decompose_essential(E, K, pts1, pts2, mask)
 
     # A partir de F y de los inliers se calculan dos homografías
     # H1 y H2 que transforman las imágenes de forma que las líneas epipolares

@@ -5,7 +5,7 @@ Uso: python main.py im0.png im1.png
 import sys
 import numpy as np
 import cv2
-from calculos import stereo_depth
+from computations import stereo_depth
 
 
 # ===============================================
