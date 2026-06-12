@@ -93,119 +93,25 @@ BCOR=5mm, % Binding correction
 
 \section{Introducción}
 
-Cuando tomamos una foto, proyectamos la imagen de un mundo tridimensional 
-a uno bidimensional. Realizar esta proyección supone la pérdida de mucha 
-información geométrica: los ángulos no se conservan, las distancias se deforman
-y las rectas paralelas convergen a un punto.
+Los seres humanos percibimos la profundidad del mundo que nos rodea gracias,
+en gran medida, a que tenemos dos ojos. Cada ojo capta una imagen ligeramente
+distinta de la misma escena: cuanto más cerca está un objeto, mayor es la
+diferencia entre ambas vistas. El cerebro utiliza esta diferencia de forma
+inconsciente para inferir a qué distancia se encuentra cada elemento de la
+escena. Este mecanismo se conoce como \textit{visión estereoscópica}.
 
-Estas consecuencias nos recuerdan al paso de una geometría euclidiana a una 
-proyectiva. Estando en la geometría euclidiana, las transformaciones preservan
-distancias y ángulos. Cuando pasamos a la geometría afín, tenemos la posibilidad
-de mover y deformar, perdiendo la conservación de ángulos y proporción de 
-longitudes, pero manteniendo la diferencia entre puntos en el infinito y puntos
-normales. Finalmente, en la geometría proyectiva no queremos esta diferencia,
-provocando que las rectas paralelas se corten en el infinito.
+La visión por computador replica este principio mediante los llamados
+\textit{sistemas de visión estéreo}: dos cámaras separadas una distancia
+conocida capturan simultáneamente la misma escena. A partir de las imágenes
+resultantes, los algoritmos buscan puntos correspondientes entre ambas vistas
+y miden cuánto se desplazan entre ellas. Ese desplazamiento, la
+\textit{disparidad}, codifica directamente la profundidad de cada punto.
 
-De esta manera, veremos que la geometría proyectiva es el marco adecuado para
-la creación y procesamiento de imágenes, pues la obtención de una no es más
-que una proyección cónica y la intersección de esta con un plano. Nos apoyaremos
-en la propiedad proyectiva de convertir rectas en rectas.
-
-
-\subsection{¿Cómo manejamos que no haya rectas paralelas?}
-
-El espacio proyectivo maneja esta cuestión añadiendo un hiperplano del infinito,
-donde las rectas paralelas se cortan. Para trabajar con estos puntos en el plano
-proyectivo $\mathbb{P}^2$, utilizamos coordenadas homogéneas $(x_1:x_2:x_3)$ donde un punto del 
-infinito se representa con $x_3=0$, mientras que un punto finito tiene $x_3\neq0$ 
-(normalmente se toma $x_3=1$). De esta manera, podemos tratar los puntos del infinito 
-y los del espacio euclidiano sin necesidad de diferenciarlos, y convertir puntos del 
-infinito en puntos normales y viceversa.
-
-\subsection{¿Cómo analizamos los resultados en la geometría proyectiva?}
-
-Conociendo todas las propiedades que no cumple la geometría proyectiva, podríamos
-pensar que no podemos medir propiedades cercanas a las percepciones humanas. Pero
-observamos que la geometría afín no es más que un caso particular de la geometría
-proyectiva, y que la geometría euclidiana no es más que un caso particular de la 
-geometría afín. 
-
-Por lo tanto, podemos pasar de la proyectiva a la euclidiana mediante estos pasos::
-
-\subsubsection{Caso de 2 dimensiones}
-
-\paragraph{De proyectiva a afín}
-
-El primero es pasar del proyectivo al afín. Esto lo conseguimos designando a
-una recta como la recta del infinito, así, las rectas que se cortan en el infinito
-son paralelas. Esto lo podríamos ver como definir la recta del horizonte.
-
-\paragraph{De afín a euclidia}
-
-El siguiente es pasar del afín al euclidiano. Primero tenemos que entender qué 
-no cumplimos. En el plano afín deformamos las distancias, y como consecuencia,
-no diferenciamos entre círculos y elipses, por ejemplo.
-
-Observamos que las elipses se pueden cortar entre ellas hasta en 4 puntos, mientras
-que las circunferencias como mucho se cortan en 2 puntos. La realidad es que
-las circunferencias también se cortan en 4 puntos, solo que dos de estos puntos
-están en el infinito. Así diferenciaremos las elipses de las circunferencias,
-haciendo que estas últimas siempre corten en dos puntos especiales del infinito,
-que llamaremos \textbf{puntos circulares}.
-
-Haciendo el ejemplo con el producto escalar usual tenemos:
-
-%TODO:Mirar si es cierto lo de que siempre debe tener solución
-Sea el producto escalar usual $\langle (x,y),(x,y)\rangle = x^2+y^2$, 
-que define la ecuación de una circunferencia, es decir, una cónica. 
-Esta ecuación siempre debería tener una cónica como solución.
-
-Pero hay un caso que parece que no cumple, este es cuando
-$\|(x,y)\|=0$, que da $x^2+y^2=0$.
-
-Sin embargo, si factorizamos, obtenemos:
-
-\[
-x^2+y^2 = (x+iy)(x-iy)=0,
-\]
-obteniendo los puntos circulares (en coordenadas homogéneas):
-\[
-I = [1:i:0], \qquad J = [1:-i:0].
-\]
-
-Por lo tanto, pasar del afín al euclidiano significa encontrar estos puntos circulares,
-con los que conoceremos la métrica de la imagen.
-
-\subsubsection{En 3 dimensiones}
-
-En un espacio tridimensional se siguen los mismos pasos, solo que buscamos el
-plano del infinito y, en vez de buscar los puntos circulares, buscamos la \textbf{cónica absoluta}
-$\Omega_\infty$. 
-Esta cónica, situada en el plano del infinito, codifica la estructura 
-métrica del espacioeuclídeo.
-Su imagen en una fotografía, denotada $\omega$, estña relacionada con los parámetros
-intrinsecos de la cámara.
-
-\subsubsection{Conclusión de la introducción}
-
-Así, la geometría proyectiva puede verse como la más general.
-La geometría afín se obtiene al distinguir una recta (o plano)
-del infinito, mientras que la geometría euclídea se obtiene
-añadiendo además una estructura métrica.
-
-\subsection{Objetivo del trabajo}
-
-Gracias a estos conocimientos de geometría proyectiva, podremos observar en el
-trabajo que la relación entre dos imágenes está completamente codificada
-en una matriz $3\times3$ llamada \textbf{matriz fundamental} $F$. 
-
-A partir de F es posible reconstruir la escena hasta una
-transformación proyectiva y obtener una estimación relativa de
-la profundidad.
-
-Si además conocemos la calibración (es decir, la imagen de la cónica absoluta), podemos 
-trabajar con la \textbf{matriz esencial} $E$, que permite una reconstrucción métrica y, 
-por tanto, un mapa de profundidad en unidades reales. 
+Para que este cálculo sea eficiente, es necesario entender la geometría que
+relaciona las dos cámaras entre sí y con la escena. Esa geometría es la
+\textit{geometría epipolar}, que impone restricciones precisas sobre dónde
+puede aparecer el correspondiente de un punto en la segunda imagen, reduciendo
+la búsqueda de un problema bidimensional a uno unidimensional.
 
 %----------------------------------------------------------------------------------------
 %	CÁMARA
