@@ -923,6 +923,40 @@ Ambos casos se manifiestan como píxeles con $d = 0$ en el mapa
 de disparidad y, por la ecuación \eqref{eq:depth}, como zonas
 negras en el mapa de profundidad.
 
+\subsection{Resultados}
+
+A continuación se muestran las dos imágenes estéreo de entrada y el mapa de
+profundidad obtenido tras la rectificación, el cómputo de disparidad y la
+conversión mediante la ecuación~\eqref{eq:depth}.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{im0.png}
+        \caption{Imagen izquierda.}
+        \label{fig:im0}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{im1.png}
+        \caption{Imagen derecha.}
+        \label{fig:im1}
+    \end{subfigure}
+    \caption{Par estéreo de entrada.}
+    \label{fig:stereo_input}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{depth_color.png}
+    \caption{Mapa de profundidad obtenido. Los tonos cálidos indican objetos
+    cercanos (disparidad grande) y los tonos fríos objetos lejanos (disparidad
+    pequeña). Las zonas negras corresponden a píxeles sin correspondencia válida.}
+    \label{fig:depth}
+\end{figure}
+
 \subsection{Triangulación y Reconstrucción Métrica}
 
 El cálculo de la disparidad nos proporciona el valor de la profundidad $Z$ para cada píxel de la imagen base. Sin embargo, esta coordenada $Z$ está expresada únicamente en el sistema de referencia local de la cámara izquierda. Para lograr una verdadera reconstrucción tridimensional de la escena, es necesario recuperar las tres coordenadas espaciales $(X, Y, Z)^T$ reales de cada punto.
