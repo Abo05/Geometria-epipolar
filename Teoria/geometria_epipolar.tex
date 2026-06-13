@@ -107,11 +107,26 @@ resultantes, los algoritmos buscan puntos correspondientes entre ambas vistas
 y miden cuánto se desplazan entre ellas. Ese desplazamiento, la
 \textit{disparidad}, codifica directamente la profundidad de cada punto.
 
-Para que este cálculo sea eficiente, es necesario entender la geometría que
-relaciona las dos cámaras entre sí y con la escena. Esa geometría es la
-\textit{geometría epipolar}, que impone restricciones precisas sobre dónde
-puede aparecer el correspondiente de un punto en la segunda imagen, reduciendo
-la búsqueda de un problema bidimensional a uno unidimensional.
+El acto de fotografiar efectúa una \textit{proyección cónica}. Este tipo de aplicación es, por 
+naturaleza, proyectiva, de modo que la \textit{geometría proyectiva} es el marco 
+adecuado para describir y analizar el proceso de formación de imagen. A su vez,
+los objetos fotografiados y la cámara se encuentan en un espacio afín, en particular, en un
+espacio afín euclídeo.
+
+La transición formal entre el espacio afín donde vive la escena y el espacio
+proyectivo donde operamos matemáticamente no se detallará de forma explícita a
+lo largo de este trabajo; asumimos que el lector acepta el paso entre ambos
+marcos sin necesidad de justificarlo en cada momento.
+
+Dentro de este marco proyectivo, la herramienta central que relaciona las dos
+vistas de un par estéreo es la \textit{geometría epipolar}, que impone
+restricciones precisas sobre dónde puede aparecer el correspondiente de un
+punto en la segunda imagen, reduciendo la búsqueda de un problema bidimensional
+a uno unidimensional. Esta geometría se encapsula algebraicamente en dos
+matrices: la \textit{matriz fundamental} $F$, que opera directamente sobre las
+coordenadas de imagen sin requerir calibración, y la \textit{matriz esencial}
+$E$, su análoga para cámaras calibradas, que adicionalmente codifica la
+rotación y traslación relativas entre ambas cámaras.
 
 %----------------------------------------------------------------------------------------
 %	CÁMARA
@@ -930,8 +945,7 @@ Mediante este proceso de triangulación, la aplicación de la matriz fundamental
 
 \subsection{Implementación práctica y resultados experimentales}
 
-El desarrollo teórico expuesto en las secciones anteriores se ha materializado en un programa en Python capaz de generar un mapa de profundidad a partir de un par estéreo. Para ello, se ha implementado la estimación de la matriz fundamental $F$ mediante el algoritmo de los 8 puntos normalizado, integrado dentro de un bucle probabilístico RANSAC para descartar los \textit{outliers}.
-
+El desarrollo teórico expuesto en las secciones anteriores se ha materializado en un programa en Python capaz de generar un mapa de profundidad a partir de un par estéreo. 
 Al analizar los mapas de disparidad y profundidad obtenidos, se observa que, si bien la estructura tridimensional de la escena se recupera correctamente, existe un cierto nivel de ruido y zonas de oclusión no resueltas. Estos resultados son esperables y se justifican al contrastar nuestro modelo geométrico ideal con la realidad física e industrial:
 
 \begin{itemize}
