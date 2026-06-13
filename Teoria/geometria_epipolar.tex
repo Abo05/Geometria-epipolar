@@ -713,14 +713,13 @@ En un escenario real, las correspondencias automáticas contienen valores atípi
 \section{Usos de la geometría epipolar}
 Finalmente, hemos puesto en práctica nuestros conocimientos de geometría epipolar
 en un programa que calcula un mapa de profundidad dadas dos imágenes estéreo.
-Las imágenes utilizadas están realizadas por cámaras con la misma referecia cartesiana
+Las imágenes utilizadas están realizadas por cámaras con la misma referencia cartesiana
 y distancia focal.
 
 En este programa hacemos el cálculo de la matriz fundamental con el 
-algorimto de los 8 puntos normalizado y creamos una estimación robusta con RANSAC.
+algoritmo de los 8 puntos normalizado y creamos una estimación robusta con RANSAC.
 
-
-\subsubsection{Rectificación de imágenes}
+\subsection{Rectificación de imágenes}
 
 Con la matriz fundamental estimada, el siguiente paso es la
 \textit{rectificación} del par estéreo. El objetivo es transformar
@@ -734,13 +733,9 @@ que todas las líneas epipolares sean paralelas al eje $X$. Los pasos
 son los siguientes:
 
 \begin{enumerate}
-    \item \textbf{Traslación:} Se traslada el centro de la imagen al
-    origen de coordenadas.
-    \item \textbf{Rotación:} Se rota la imagen para que el epípolo,
-    expresado en coordenadas relativas al centro, quede alineado con
-    el eje $X$ positivo.
-    \item \textbf{Transformación proyectiva:} Se aplica una
-    transformación $G$ que envía el epípolo al infinito.
+    \item \textbf{Traslación:} Se traslada el centro de la imagen al origen de coordenadas.
+    \item \textbf{Rotación:} Se rota la imagen para que el epípolo, expresado en coordenadas relativas al centro, quede alineado con el eje $X$ positivo.
+    \item \textbf{Transformación proyectiva:} Se aplica una transformación $G$ que envía el epípolo al infinito.
 \end{enumerate}
 
 La restricción fundamental que debe satisfacerse es que la escala y
@@ -752,7 +747,7 @@ de correspondencias. Solo el desplazamiento horizontal puede diferir
 entre ambas transformaciones, pues es precisamente esa diferencia la
 que codifica la disparidad.
 
-\subsubsection{Cálculo de la Disparidad}
+\subsection{Cómputo de la disparidad}
 
 Una vez rectificadas las imágenes, la búsqueda de correspondencias
 se reduce a un problema unidimensional: dado un píxel $(x, y)$ en
@@ -761,12 +756,8 @@ encuentra necesariamente en la misma fila $y$, desplazado
 horizontalmente una cantidad $d$ denominada \textit{disparidad}.
 
 \begin{definition}[Disparidad]
-    Dados dos puntos correspondientes $\mathbf{x}_L = (x, y)$ en la
-    imagen izquierda y $\mathbf{x}_R = (x', y)$ en la imagen derecha,
-    se define la disparidad como:
-    \[
-        d = x - x'
-    \]
+    Dados dos puntos correspondientes $\mathbf{x}_L = (x, y)$ en la imagen izquierda y $\mathbf{x}_R = (x', y)$ en la imagen derecha, se define la disparidad como:
+    $$d = x - x'$$
 \end{definition}
 
 \subsubsection{Dirección del desplazamiento}
@@ -793,28 +784,100 @@ $f$ y con sus planos de imagen coplanarios tras la rectificación. Un punto
 $\mathbf{X}$ del espacio a profundidad $Z$ se proyecta en $x_L$ en la cámara
 izquierda y en $x_R$ en la derecha.
 
-Suponemos, sin perdida de generalidad que el centro óptico de la cámara izquierda
+Suponemos, sin pérdida de generalidad que el centro óptico de la cámara izquierda
 está en el origen. Para la cámara izquierda la semejanza de triángulos da:
-\[
-    \frac{x_L}{f} = \frac{X}{Z} \implies x_L = \frac{fX}{Z}
-\]
+$$\frac{x_L}{f} = \frac{X}{Z} \implies x_L = \frac{fX}{Z}$$
 
 Para la cámara derecha, cuyo centro óptico está desplazado $B$ en el eje $X$,
 el mismo punto tiene coordenada $X - B$ relativa a ese centro:
-\[
-    \frac{x_R}{f} = \frac{X - B}{Z} \implies x_R = \frac{f(X-B)}{Z}
-\]
+$$\frac{x_R}{f} = \frac{X - B}{Z} \implies x_R = \frac{f(X-B)}{Z}$$
 
 La disparidad es la diferencia de ambas proyecciones:
-\[
-    d = x_L - x_R = \frac{fX}{Z} - \frac{f(X-B)}{Z} = \frac{fB}{Z}
-\]
+$$d = x_L - x_R = \frac{fX}{Z} - \frac{f(X-B)}{Z} = \frac{fB}{Z}$$
 
 Despejando $Z$:
 \begin{equation}
     Z = \frac{f \cdot B}{d}
     \label{eq:depth}
 \end{equation}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1.2, >=Stealth, every node/.style={font=\small}]
+        % Parámetros geométricos
+        \def\B{5.5}     % Baseline (Distancia entre cámaras)
+        \def\f{2.2}     % Distancia focal
+        \def\Z{6.5}     % Profundidad Z
+        \def\X{4.0}     % Coordenada X del punto 3D
+
+        % Centros ópticos
+        \coordinate (CL) at (0,0);
+        \coordinate (CR) at (\B,0);
+        \filldraw (CL) circle (2pt) node[below left] {$\mathbf{C}_L$};
+        \filldraw (CR) circle (2pt) node[below right] {$\mathbf{C}_R$};
+
+        % Ejes ópticos (Z)
+        \draw[dashed, gray, ->] (CL) -- (0,\Z+0.8) node[above] {Eje $Z_L$};
+        \draw[dashed, gray, ->] (CR) -- (\B,\Z+0.8) node[above] {Eje $Z_R$};
+
+        % Línea base (Baseline)
+        \draw[thick, dashed] (CL) -- (CR);
+        \draw[<->] (0,-0.6) -- (\B,-0.6) node[midway, below] {$B$};
+
+        % Planos de imagen (rectificados y coplanarios)
+        \draw[thick, blue!80!black] (-1.5, \f) -- (2.5, \f) node[above left] {Plano imagen izq.};
+        \draw[thick, blue!80!black] (\B-2.5, \f) -- (\B+1.5, \f) node[above right] {Plano imagen der.};
+
+        % Intersección de los ejes ópticos con los planos de imagen
+        \coordinate (fL) at (0,\f);
+        \coordinate (fR) at (\B,\f);
+        \filldraw (fL) circle (1pt);
+        \filldraw (fR) circle (1pt);
+
+        % Punto 3D X
+        \coordinate (P3D) at (\X,\Z);
+        \filldraw (P3D) circle (2pt) node[above right] {$\mathbf{X} = (X, Y, Z)$};
+
+        % Rayos proyectivos
+        \draw[thick, orange!80!black] (CL) -- (P3D);
+        \draw[thick, orange!80!black] (CR) -- (P3D);
+
+        % Cálculo de las proyecciones usando las ecuaciones de semejanza
+        \pgfmathsetmacro{\xL}{\X * \f / \Z}
+        \coordinate (pL) at (\xL, \f);
+        \filldraw[red] (pL) circle (1.5pt) node[above left, text=red] {$x_L$};
+
+        \pgfmathsetmacro{\xR}{\B + (\X - \B) * \f / \Z}
+        \coordinate (pR) at (\xR, \f);
+        \filldraw[red] (pR) circle (1.5pt) node[above right, text=red] {$x_R$};
+
+        % Acotaciones de xL y xR (respecto a sus ejes ópticos locales)
+        \draw[<->] (0, \f-0.3) -- (\xL, \f-0.3) node[midway, below] {$x_L$};
+        \draw[<->] (\B, \f-0.3) -- (\xR, \f-0.3) node[midway, below] {$x_R$};
+
+        % Proyección del punto 3D sobre el eje X para el triángulo grande
+        \draw[dashed, gray] (P3D) -- (\X,0) coordinate (X_base);
+        
+        % Acotación de la profundidad Z
+        \draw[<->] (\X+0.3, 0) -- (\X+0.3, \Z) node[midway, right] {$Z$};
+
+        % Acotación de la distancia focal f
+        \draw[<->] (-0.8, 0) -- (-0.8, \f) node[midway, left] {$f$};
+        \draw[dashed, gray] (CL) -- (-1.0, 0);
+        \draw[dashed, gray] (-1.5, \f) -- (-1.0, \f);
+
+        % Acotación de X y (X-B)
+        \draw[<->] (0, 0.4) -- (\X, 0.4) node[midway, above] {$X$};
+        \draw[<->] (\X, 0.4) -- (\B, 0.4) node[midway, above] {$B-X$};
+
+        % Sombreado de los triángulos semejantes para la cámara izquierda
+        \fill[blue!10, opacity=0.5] (CL) -- (fL) -- (pL) -- cycle;
+        \fill[orange!10, opacity=0.3] (CL) -- (X_base) -- (P3D) -- cycle;
+
+    \end{tikzpicture}
+    \caption{Relación geométrica entre disparidad y profundidad mediante semejanza de triángulos en un par estéreo rectificado.}
+    \label{fig:triangulacion_stereo}
+\end{figure}
 
 Los términos $X$ se cancelan exactamente, lo que refleja el hecho geométrico
 de que la profundidad depende únicamente del desplazamiento horizontal entre
@@ -837,26 +900,65 @@ No todos los píxeles tienen una correspondencia válida en la otra
 imagen. Existen dos causas principales:
 
 \begin{itemize}
-    \item \textbf{Oclusiones:} regiones visibles desde una cámara
-    pero ocultas desde la otra por un objeto interpuesto. Son
-    inevitables en cualquier par estéreo con baseline no nula.
-    \item \textbf{Regiones sin textura:} zonas uniformes donde la
-    métrica de comparación produce el mismo coste para múltiples
-    disparidades. En estos casos se puede aplicar un test de unicidad 
-    que descarta el match si el segundo mejor candidato es demasiado parecido
-    al mejor.
+    \item \textbf{Oclusiones:} regiones visibles desde una cámara pero ocultas desde la otra por un objeto interpuesto. Son inevitables en cualquier par estéreo con baseline no nula.
+    \item \textbf{Regiones sin textura:} zonas uniformes donde la métrica de comparación produce el mismo coste para múltiples disparidades. En estos casos se puede aplicar un test de unicidad que descarta el match si el segundo mejor candidato es demasiado parecido al mejor.
 \end{itemize}
 
 Ambos casos se manifiestan como píxeles con $d = 0$ en el mapa
 de disparidad y, por la ecuación \eqref{eq:depth}, como zonas
 negras en el mapa de profundidad.
 
+\subsection{Triangulación y Reconstrucción Métrica}
+
+El cálculo de la disparidad nos proporciona el valor de la profundidad $Z$ para cada píxel de la imagen base. Sin embargo, esta coordenada $Z$ está expresada únicamente en el sistema de referencia local de la cámara izquierda. Para lograr una verdadera reconstrucción tridimensional de la escena, es necesario recuperar las tres coordenadas espaciales $(X, Y, Z)^T$ reales de cada punto.
+
+Conocida la profundidad $Z$ calculada mediante la ecuación \eqref{eq:depth}, podemos invertir las ecuaciones de la proyección geométrica ideal. Dado un píxel $(x_L, y)$ en la imagen rectificada y conociendo la distancia focal $f$, las coordenadas tridimensionales euclídeas se recuperan de forma directa multiplicando por la profundidad obtenida:
+$$X = \frac{x_L \cdot Z}{f}, \quad Y = \frac{y \cdot Z}{f}$$
+
+De este modo, obtenemos el vector de coordenadas locales $\mathbf{X}_{\text{cam}} = (X, Y, Z)^T$ respecto al centro óptico de la cámara. El último paso consiste en trasladar esta nube de puntos al sistema de coordenadas global del mundo. Para ello, aplicamos la transformación geométrica inversa definida por los parámetros extrínsecos de la cámara (la matriz de rotación $R$ y el vector de traslación $\mathbf{t}$):
+$$\mathbf{X}_{\text{mundo}} = R^{-1} (\mathbf{X}_{\text{cam}} - \mathbf{t})$$
+
+Mediante este proceso de triangulación, la aplicación de la matriz fundamental y la geometría epipolar trasciende la mera búsqueda bidimensional, permitiendo elevar la información plana de las imágenes a un modelo métrico tridimensional de la escena original.
+
+\newpage
+
 %----------------------------------------------------------------------------------------
-%	RESULTS AND DISCUSSION
+%    RESULTADOS, APLICACIONES Y CONCLUSIONES
 %----------------------------------------------------------------------------------------
 
-\section{Conclusión}
+\section{Resultados, aplicaciones y conclusiones}
 
+\subsection{Implementación práctica y resultados experimentales}
+
+El desarrollo teórico expuesto en las secciones anteriores se ha materializado en un programa en Python capaz de generar un mapa de profundidad a partir de un par estéreo. Para ello, se ha implementado la estimación de la matriz fundamental $F$ mediante el algoritmo de los 8 puntos normalizado, integrado dentro de un bucle probabilístico RANSAC para descartar los \textit{outliers}.
+
+Al analizar los mapas de disparidad y profundidad obtenidos, se observa que, si bien la estructura tridimensional de la escena se recupera correctamente, existe un cierto nivel de ruido y zonas de oclusión no resueltas. Estos resultados son esperables y se justifican al contrastar nuestro modelo geométrico ideal con la realidad física e industrial:
+
+\begin{itemize}
+    \item \textbf{Limitaciones ópticas frente al modelo estenopeico:} Nuestro desarrollo algebraico asume una cámara estenopeica perfecta, donde la luz converge en un único punto adimensional. En la práctica, la mayoría de cámaras modernas utilizan sistemas de lentes complejas que introducen distorsión radial y tangencial. En la industria estas imágenes se preprocesan para rectificar la deformación óptica. Cualquier error residual en la calibración rompe la linealidad estricta asumida por la matriz de cámara $P = K[R \mid \mathbf{t}]$.
+    \item \textbf{Filtrado algorítmico local:} Nuestro enfoque realiza una búsqueda unidimensional por bloques (\textit{Block Matching}) estrictamente local. Los algoritmos comerciales modernos aplican capas adicionales de optimización global (como \textit{Semi-Global Matching} o SGM) e imponen restricciones de suavidad espacial para eliminar el ruido y así conseguir sacar un mejor mapa de profundidad.
+\end{itemize}
+
+Pese a estas limitaciones, el valor de la geometría epipolar reside precisamente en su abstracción y sencillez. Permite condensar la compleja propagación de la luz en el espacio tridimensional en una estructura matricial lineal altamente eficiente, permitiendo calcular triangulaciones mediante operaciones elementales de álgebra lineal óptimas para la computación moderna.
+
+\subsection{La perspectiva biológica: ¿Por qué tenemos dos ojos?}
+
+La geometría epipolar no sólo es un artefacto matemático empleado en la ingeniería para la visión por ordenador, sino la formalización analítica de una solución evolutiva. Desde una perspectiva geométrica, un único ojo humano actúa como un sistema proyectivo $\mathbb{P}^3 \rightarrow \mathbb{P}^2$. En esta transformación, se produce una pérdida de dimensión irrecuperable: se perdería todo la información sobre la profundidad. Así, con una sola vista existe una ambigüedad de escala intrínseca que impide discernir si un objeto es pequeño y cercano o grande y distante.
+
+La naturaleza resuelve esta singularidad dotando a muchos animales, entre ellos el humano, de un par de ojos frontales separados por una distancia fija. El cerebro humano opera, de forma inconsciente, como el algoritmo de triangulación que hemos modelado: localiza puntos homólogos en las imágenes de ambas retinas, evalúa su desplazamiento horizontal (la disparidad) y aplica el principio de semejanza de triángulos $Z = \frac{f \cdot B}{d}$ para percibir instantáneamente el relieve y la profundidad real del entorno.
+
+Esto se puede observar de forma práctica en las personas que han perdido la visión en uno de los ojos. Si bien no desaparece completamente el sentido de la profundidad, éste sí se ve gravemente afectado y reducido.
+
+\subsection{Otras aplicaciones en la tecnología actual}
+
+Las restricciones geométricas deducidas en este trabajo se extienden más allá de la configuración clásica de un par estéreo fijo, constituyendo el núcleo de diversas tecnologías de vanguardia:
+
+\begin{itemize}
+    \item \textbf{Robótica y conducción autónoma:} Los vehículos modernos emplean sistemas de visión estéreo para mapear el entorno y detectar obstáculos en tiempo real. La geometría epipolar permite calcular distancias con alta precisión de forma pasiva, sin la necesidad de emitir señales como hacen los sistemas LIDAR o de radar.
+    \item \textbf{Estructura a partir del Movimiento (SfM) y SLAM:} Las bases de la matriz fundamental y esencial se aplican también a sistemas de cámara única que se desplazan en el tiempo. Al extraer correspondencias entre fotogramas sucesivos, el movimiento de la propia cámara genera la línea base necesaria, permitiendo la localización y el mapeo simultáneo (SLAM), tecnología indispensable en la Realidad Aumentada y la fotogrametría mediante drones.
+\end{itemize}
+
+En conclusión, la geometría epipolar establece un puente directo entre el álgebra lineal teórica y la percepción espacial, demostrando ser un modelo sumamente útil en la visión por ordenador. Proporciona una herramienta geométrica fiable y, sobre todo, más rápida que algunas alternativas puramente basadas en inteligencia artificial y aprendizaje automático.
 
 %----------------------------------------------------------------------------------------
 %	BIBLIOGRAPHY
