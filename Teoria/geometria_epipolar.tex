@@ -124,7 +124,7 @@ rotación y traslación relativas entre ambas cámaras.
 
 En esta sección vamos a hablar de las cámaras. La idea es trasladar la noción intuitiva que tenemos sobre una cámara a un objeto matemático formal con el que poder operar.
 
-Conceptualmente, una cámara proyecta un objeto del mundo tridimensional sobre una superficie bidimensional. De manera informal, se puede establecer que una cámara actúa como una aplicación del espacio proyectivo tridimensional al bidimensional. Sin embargo, no cualquier proyección $P\mathbb{R}^3 \rightarrow P\mathbb{R}^2$ constituye un modelo de cámara válido, sino que tendrá que cumplir una serie de condiciones geométricas. Concretamente, se busca modelar una proyección cónica.
+Conceptualmente, una cámara proyecta un objeto del mundo tridimensional sobre una superficie bidimensional. De manera informal, se puede establecer que una cámara actúa como una aplicación del espacio proyectivo tridimensional al bidimensional. Sin embargo, no cualquier proyección $\mathbb{P}^3_\mathbb{R} \rightarrow \mathbb{P}^2_\mathbb{R}$ constituye un modelo de cámara válido, sino que tendrá que cumplir una serie de condiciones geométricas. Concretamente, se busca modelar una proyección cónica.
 
 Para ver como modelamos está proyección vamos a ver primero un pequeño modelo físico.
 
@@ -560,10 +560,10 @@ Este concepto es fundamental en la Visión por Computador para el análisis geom
 
 Para modelar analíticamente esta relación, consideramos dos cámaras finitas descritas por sus matrices de proyección $P_1$ y $P_2$, que actúan como aplicaciones lineales continuas sobre el espacio proyectivo:
 \[
-    P_1, P_2: P\mathbb{R}^3 \longrightarrow P\mathbb{R}^2
+    P_1, P_2: \mathbb{P}^3_\mathbb{R} \longrightarrow \mathbb{P}^2_\mathbb{R}
 \]
 
-Sea $\mathbf{X} \in P\mathbb{R}^3$ un punto de la escena tridimensional cuyas proyecciones en los respectivos planos imagen son los puntos $\mathbf{x}_1 = P_1 \mathbf{X}$ y $\mathbf{x}_2 = P_2 \mathbf{X}$. 
+Sea $\mathbf{X} \in \mathbb{P}^3_\mathbb{R}$ un punto de la escena tridimensional cuyas proyecciones en los respectivos planos imagen son los puntos $\mathbf{x}_1 = P_1 \mathbf{X}$ y $\mathbf{x}_2 = P_2 \mathbf{X}$. 
 
 \begin{figure}[H]
     \centering
@@ -605,7 +605,7 @@ Algebraicamente, se puede calcular el epípolo como la proyección del centro ó
 
 \subsection{La Matriz Fundamental}
 
-La matriz fundamental es la representación algebraica de la geometría epipolar que establece la correspondencia geométrica entre dos vistas. A diferencia de una homografía, no constituye una aplicación punto a punto, sino una correlación proyectiva $F: P\mathbb{R}^2 \longrightarrow P\mathbb{R}^{2*}$, donde $P\mathbb{R}^{2*}$ es el espacio de las rectas del proyectivo $P\mathbb{R}^2$. Esta aplicación asigna a cada punto homogéneo de la primera imagen su recta epipolar correspondiente en el otro plano imagen. Algebraicamente, se representa mediante una matriz de dimensiones $3 \times 3$.
+La matriz fundamental es la representación algebraica de la geometría epipolar que establece la correspondencia geométrica entre dos vistas. A diferencia de una homografía, no constituye una aplicación punto a punto, sino una correlación proyectiva $F: \mathbb{P}^2_\mathbb{R} \longrightarrow \mathbb{P}^{2*}_\mathbb{R}$, donde $\mathbb{P}^{2*}_\mathbb{R}$ es el espacio de las rectas del proyectivo $\mathbb{P}^2_\mathbb{R}$. Esta aplicación asigna a cada punto homogéneo de la primera imagen su recta epipolar correspondiente en el otro plano imagen. Algebraicamente, se representa mediante una matriz de dimensiones $3 \times 3$.
 
 A continuación, se desarrolla la deducción analítica para obtener la expresión explícita de dicha matriz.
 
@@ -1092,7 +1092,7 @@ Pese a estas limitaciones, el valor de la geometría epipolar reside precisament
 
 \subsection{La perspectiva biológica: ¿Por qué tenemos dos ojos?}
 
-La geometría epipolar no sólo es un artefacto matemático empleado en la ingeniería para la visión por ordenador, sino la formalización analítica de una solución evolutiva. Desde una perspectiva geométrica, un único ojo humano actúa como un sistema proyectivo $\mathbb{P}^3 \rightarrow \mathbb{P}^2$. En esta transformación, se produce una pérdida de dimensión irrecuperable: se perdería todo la información sobre la profundidad. Así, con una sola vista existe una ambigüedad de escala intrínseca que impide discernir si un objeto es pequeño y cercano o grande y distante.
+La geometría epipolar no sólo es un artefacto matemático empleado en la ingeniería para la visión por ordenador, sino la formalización analítica de una solución evolutiva. Desde una perspectiva geométrica, un único ojo humano actúa como un sistema proyectivo $\mathbb{P}^3_\mathbb{R} \rightarrow \mathbb{P}^2_\mathbb{R}$. En esta transformación, se produce una pérdida de dimensión irrecuperable: se perdería todo la información sobre la profundidad. Así, con una sola vista existe una ambigüedad de escala intrínseca que impide discernir si un objeto es pequeño y cercano o grande y distante.
 
 La naturaleza resuelve esta singularidad dotando a muchos animales, entre ellos el humano, de un par de ojos frontales separados por una distancia fija. El cerebro humano opera, de forma inconsciente, como el algoritmo de triangulación que hemos modelado: localiza puntos homólogos en las imágenes de ambas retinas, evalúa su desplazamiento horizontal (la disparidad) y aplica el principio de semejanza de triángulos $Z = \frac{f \cdot B}{d}$ para percibir instantáneamente el relieve y la profundidad real del entorno.
 
@@ -1109,12 +1109,15 @@ Las restricciones geométricas deducidas en este trabajo se extienden más allá
 
 En conclusión, la geometría epipolar establece un puente directo entre el álgebra lineal teórica y la percepción espacial, demostrando ser un modelo sumamente útil en la visión por ordenador. Proporciona una herramienta geométrica fiable y, sobre todo, más rápida que algunas alternativas puramente basadas en inteligencia artificial y aprendizaje automático.
 
+\newpage
+
 %----------------------------------------------------------------------------------------
 %	BIBLIOGRAPHY
 %----------------------------------------------------------------------------------------
 
-\renewcommand{\refname}{\spacedlowsmallcaps{References}} % For modifying the bibliography heading
+\renewcommand{\refname}{\spacedlowsmallcaps{Referencias}} % For modifying the bibliography heading
 
+\nocite{*}
 \bibliographystyle{unsrt}
 
 \bibliography{sample.bib} % The file containing the bibliography
