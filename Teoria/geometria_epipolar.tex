@@ -741,9 +741,8 @@ En un escenario real, las correspondencias automáticas contienen valores atípi
 En el estudio de la matriz fundamental, podemos encontrar una ambigüedad proyectiva. 
 La matriz $F$ tiene una estructura completamente proyectiva, ya que todos sus resultados dependen de coordenadas proyectivas, como por ejemplo la restricción epipolar.
 
-\begin{result}
-    Sea $H$ una matriz $4 \times 4$ de una aplicación proyectiva, las matrices fundamentales correspondientes al par de cámaras $(P_1,P_2)$ y $(P_1H,P_2H)$ son iguales. Recíprocamente, si dos pares de matrices $(P_1,P_2)$ y $(P_3,P_4)$ con la misma matriz fundamental, existe $H$ tal que $(P_3,P_4)=(P_1H,P_2H)$.
-\end{result}
+\textbf{Proposición:} Sea $H$ una matriz $4 \times 4$ de una aplicación proyectiva, las matrices fundamentales correspondientes al par de cámaras $(P_1,P_2)$ y $(P_1H,P_2H)$ son iguales. Recíprocamente, si dos pares de matrices $(P_1,P_2)$ y $(P_3,P_4)$ con la misma matriz fundamental, existe $H$ tal que $(P_3,P_4)=(P_1H,P_2H)$.
+
 Esto se debe a que aplicar $H$ y $H^{-1}$ deja invariante a las proyecciones, ya que $x=PH*H^{-1}X=PX$. Por tanto, para cualquier matriz $P$, se cumple que su proyección es invariante. 
 
 Debido a la ambigüedad proyectiva, se define la forma canónica de las matrices de las cámaras que se obtienen a partir de $F$. La primera matriz viene dada por $P_1=(I|0)$, mientras que la segunda $P_2=[m]_\times M$.
