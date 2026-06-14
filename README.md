@@ -37,6 +37,7 @@ source venv/bin/activate
 cd Practica
 python main.py
 
-#Por defecto se cargarán im0.png im1.png. También es posible indicar explícitamente las imágenes de entrada:
+#Por defecto se cargarán im0.png im1.png 
+#También es posible indicar explícitamente las imágenes de entrada:
 python main.py imagen_izquierda.png imagen_derecha.png
 ```
