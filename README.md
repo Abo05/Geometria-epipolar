@@ -13,9 +13,13 @@ El repositorio está dividido en dos bloques principales:
 
 * **Teoria/**: Contiene el código fuente en LaTeX y el documento compilado final (`geometria_epipolar.pdf`). Este documento tiene la teoría del trabajo sobre geometría epipolar centrado en el pdf.
 * **Practica/**: Contiene la implementación en Python.
-  * `main.py`: Script principal que carga un par estéreo rectificado (`im0.png`, `im1.png`) y utiliza el algoritmo Semi-Global Block Matching (SGBM) de OpenCV para calcular el mapa de disparidad.
-  * `calculateF.py`: Script orientado al cálculo de la matriz fundamental y el procesamiento analítico entre correspondencias.
-  * Resultados: `mapa_disparidad_gris.png` y `mapa_disparidad_color.png`.
+  * `main.py`: Punto de entrada del programa. Gestiona la carga de imágenes, la detección automática de correspondencias mediante SIFT, la ejecución del pipeline y la generación de resultados.
+  * `computations.py`: Script que implementa los algoritmos principales. Estos son:
+    * Estimación de la matriz fundamental con el algoritmo normalizado de los 8 puntos y RANSAC.
+    * Rectificación estéreo.
+    * Cálculo del mapa de disparidad.
+    * Obtención de un mapa de profundidad relativa.
+  * Resultados: Los resultados se guardan en la carpeta output/.
 
 ## Requisitos y Configuración
 
@@ -32,4 +36,7 @@ source venv/bin/activate
 # Ejecutar la generación del mapa de disparidad
 cd Practica
 python main.py
+
+#Por defecto se cargarán im0.png im1.png. También es posible indicar explícitamente las imágenes de entrada:
+python main.py imagen_izquierda.png imagen_derecha.png
 ```
