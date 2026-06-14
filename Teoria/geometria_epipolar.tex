@@ -433,11 +433,11 @@ Como hemos deducido en las secciones anteriores, la matriz de proyección genera
 \]
 Esta expresión agrupa los 10 grados de libertad del modelo en dos conjuntos fundamentales:
 \begin{itemize}
-    \item \textbf{Parámetros intrínsecos (matriz $K$):} Definen las propiedades internas y la geometría del sensor, correspondientes a las distancias focales $\alpha_x, y el punto principal $(x_0, y_0)$.
+    \item \textbf{Parámetros intrínsecos (matriz $K$):} Definen las propiedades internas y la geometría del sensor, correspondientes a las distancias focales $\alpha_x$, y el punto principal $(x_0, y_0)$.
     \item \textbf{Parámetros extrínsecos (matriz $R$ y centro $\vec{OC}$):} Definen la posición espacial (centro de proyección $\vec{OC}$) y la orientación (rotación ortogonal $R$) de la cámara respecto al sistema de coordenadas global del mundo.
 \end{itemize}
 
-Algunas fuentes hacen una generalización mayor y añaden que puede haber un ángulo con el plano imagen, haciendo que el eje $v_3$ no sea ortogonal al plano, se denota por $s$ y se llama \textit{skew}. Esto daría 11 parámetros en vez de nuestros 10 pero, sería equivalente sólo que hemos supuesto que $s=0$.
+Algunas fuentes hacen una generalización mayor y añaden que el eje $v_3$ no sea ortogonal al plano imagen, habiendo un ángulo $s$ entre el plano y el eje que se denomina \textit{skew}. Esto daría 11 parámetros en vez de nuestros 10 pero, sería equivalente bajo el supuesto $s=0$.
 
 Esta formulación asume que el centro óptico es un punto real y finito del espacio. Algebraicamente, esto nos lleva a la siguiente definición:
 
