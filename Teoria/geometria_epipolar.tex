@@ -27,7 +27,6 @@ oneside, % One page layout (no page indentation)
 headinclude,footinclude, % Extra spacing for the header and footer
 BCOR=5mm, % Binding correction
 ]{scrartcl}
-
 \input{structure.tex} % Include the structure.tex file which specified the document structure and layout
 
 \hyphenation{Fortran hy-phen-ation} % Specify custom hyphenation points in words with dashes where you would like hyphenation to occur, or alternatively, don't put any dashes in a word to stop hyphenation altogether
@@ -72,19 +71,6 @@ BCOR=5mm, % Binding correction
 
 \tableofcontents % Print the table of contents
 
-\listoffigures % Print the list of figures
-
-\listoftables % Print the list of tables
-
-%----------------------------------------------------------------------------------------
-%	ABSTRACT
-%----------------------------------------------------------------------------------------
-
-\section*{Abstract} % This section will not appear in the table of contents due to the star (\section*)
-
-
-%----------------------------------------------------------------------------------------
-
 \newpage % Start the article content on the second page, remove this if you have a longer abstract that goes onto the second page
 
 %----------------------------------------------------------------------------------------
@@ -93,119 +79,42 @@ BCOR=5mm, % Binding correction
 
 \section{Introducción}
 
-Cuando tomamos una foto, proyectamos la imagen de un mundo tridimensional 
-a uno bidimensional. Realizar esta proyección supone la pérdida de mucha 
-información geométrica: los ángulos no se conservan, las distancias se deforman
-y las rectas paralelas convergen a un punto.
+Los seres humanos percibimos la profundidad del mundo que nos rodea gracias,
+en gran medida, a que tenemos dos ojos. Cada ojo capta una imagen ligeramente
+distinta de la misma escena: cuanto más cerca está un objeto, mayor es la
+diferencia entre ambas vistas. El cerebro utiliza esta diferencia de forma
+inconsciente para inferir a qué distancia se encuentra cada elemento de la
+escena. Este mecanismo se conoce como \textit{visión estereoscópica}.
 
-Estas consecuencias nos recuerdan al paso de una geometría euclidiana a una 
-proyectiva. Estando en la geometría euclidiana, las transformaciones preservan
-distancias y ángulos. Cuando pasamos a la geometría afín, tenemos la posibilidad
-de mover y deformar, perdiendo la conservación de ángulos y proporción de 
-longitudes, pero manteniendo la diferencia entre puntos en el infinito y puntos
-normales. Finalmente, en la geometría proyectiva no queremos esta diferencia,
-provocando que las rectas paralelas se corten en el infinito.
+La visión por computador replica este principio mediante los llamados
+\textit{sistemas de visión estéreo}: dos cámaras separadas una distancia
+conocida capturan simultáneamente la misma escena. A partir de las imágenes
+resultantes, los algoritmos buscan puntos correspondientes entre ambas vistas
+y miden cuánto se desplazan entre ellas. Ese desplazamiento, la
+\textit{disparidad}, codifica directamente la profundidad de cada punto.
 
-De esta manera, veremos que la geometría proyectiva es el marco adecuado para
-la creación y procesamiento de imágenes, pues la obtención de una no es más
-que una proyección cónica y la intersección de esta con un plano. Nos apoyaremos
-en la propiedad proyectiva de convertir rectas en rectas.
+El acto de fotografiar efectúa una \textit{proyección cónica}. Este tipo de aplicación es, por 
+naturaleza, proyectiva, de modo que la \textit{geometría proyectiva} es el marco 
+adecuado para describir y analizar el proceso de formación de imagen. A su vez,
+los objetos fotografiados y la cámara se encuentan en un espacio afín, en particular, en un
+espacio afín euclídeo.
 
+La transición formal entre el espacio afín donde vive la escena y el espacio
+proyectivo donde operamos matemáticamente no se detallará de forma explícita a
+lo largo de este trabajo; asumimos que el lector acepta el paso entre ambos
+marcos sin necesidad de justificarlo en cada momento.
 
-\subsection{¿Cómo manejamos que no haya rectas paralelas?}
+Dentro de este marco proyectivo, la herramienta central que relaciona las dos
+vistas de un par estéreo es la \textit{geometría epipolar}, que impone
+restricciones precisas sobre dónde puede aparecer el correspondiente de un
+punto en la segunda imagen, reduciendo la búsqueda de un problema bidimensional
+a uno unidimensional. Esta geometría se encapsula algebraicamente en dos
+matrices: la \textit{matriz fundamental} $F$, que opera directamente sobre las
+coordenadas de imagen sin requerir calibración, y la \textit{matriz esencial}
+$E$, su análoga para cámaras calibradas, que adicionalmente codifica la
+rotación y traslación relativas entre ambas cámaras.
 
-El espacio proyectivo maneja esta cuestión añadiendo un hiperplano del infinito,
-donde las rectas paralelas se cortan. Para trabajar con estos puntos en el plano
-proyectivo $\mathbb{P}^2$, utilizamos coordenadas homogéneas $(x_1:x_2:x_3)$ donde un punto del 
-infinito se representa con $x_3=0$, mientras que un punto finito tiene $x_3\neq0$ 
-(normalmente se toma $x_3=1$). De esta manera, podemos tratar los puntos del infinito 
-y los del espacio euclidiano sin necesidad de diferenciarlos, y convertir puntos del 
-infinito en puntos normales y viceversa.
-
-\subsection{¿Cómo analizamos los resultados en la geometría proyectiva?}
-
-Conociendo todas las propiedades que no cumple la geometría proyectiva, podríamos
-pensar que no podemos medir propiedades cercanas a las percepciones humanas. Pero
-observamos que la geometría afín no es más que un caso particular de la geometría
-proyectiva, y que la geometría euclidiana no es más que un caso particular de la 
-geometría afín. 
-
-Por lo tanto, podemos pasar de la proyectiva a la euclidiana mediante estos pasos::
-
-\subsubsection{Caso de 2 dimensiones}
-
-\paragraph{De proyectiva a afín}
-
-El primero es pasar del proyectivo al afín. Esto lo conseguimos designando a
-una recta como la recta del infinito, así, las rectas que se cortan en el infinito
-son paralelas. Esto lo podríamos ver como definir la recta del horizonte.
-
-\paragraph{De afín a euclidia}
-
-El siguiente es pasar del afín al euclidiano. Primero tenemos que entender qué 
-no cumplimos. En el plano afín deformamos las distancias, y como consecuencia,
-no diferenciamos entre círculos y elipses, por ejemplo.
-
-Observamos que las elipses se pueden cortar entre ellas hasta en 4 puntos, mientras
-que las circunferencias como mucho se cortan en 2 puntos. La realidad es que
-las circunferencias también se cortan en 4 puntos, solo que dos de estos puntos
-están en el infinito. Así diferenciaremos las elipses de las circunferencias,
-haciendo que estas últimas siempre corten en dos puntos especiales del infinito,
-que llamaremos \textbf{puntos circulares}.
-
-Haciendo el ejemplo con el producto escalar usual tenemos:
-
-%TODO:Mirar si es cierto lo de que siempre debe tener solución
-Sea el producto escalar usual $\langle (x,y),(x,y)\rangle = x^2+y^2$, 
-que define la ecuación de una circunferencia, es decir, una cónica. 
-Esta ecuación siempre debería tener una cónica como solución.
-
-Pero hay un caso que parece que no cumple, este es cuando
-$\|(x,y)\|=0$, que da $x^2+y^2=0$.
-
-Sin embargo, si factorizamos, obtenemos:
-
-\[
-x^2+y^2 = (x+iy)(x-iy)=0,
-\]
-obteniendo los puntos circulares (en coordenadas homogéneas):
-\[
-I = [1:i:0], \qquad J = [1:-i:0].
-\]
-
-Por lo tanto, pasar del afín al euclidiano significa encontrar estos puntos circulares,
-con los que conoceremos la métrica de la imagen.
-
-\subsubsection{En 3 dimensiones}
-
-En un espacio tridimensional se siguen los mismos pasos, solo que buscamos el
-plano del infinito y, en vez de buscar los puntos circulares, buscamos la \textbf{cónica absoluta}
-$\Omega_\infty$. 
-Esta cónica, situada en el plano del infinito, codifica la estructura 
-métrica del espacioeuclídeo.
-Su imagen en una fotografía, denotada $\omega$, estña relacionada con los parámetros
-intrinsecos de la cámara.
-
-\subsubsection{Conclusión de la introducción}
-
-Así, la geometría proyectiva puede verse como la más general.
-La geometría afín se obtiene al distinguir una recta (o plano)
-del infinito, mientras que la geometría euclídea se obtiene
-añadiendo además una estructura métrica.
-
-\subsection{Objetivo del trabajo}
-
-Gracias a estos conocimientos de geometría proyectiva, podremos observar en el
-trabajo que la relación entre dos imágenes está completamente codificada
-en una matriz $3\times3$ llamada \textbf{matriz fundamental} $F$. 
-
-A partir de F es posible reconstruir la escena hasta una
-transformación proyectiva y obtener una estimación relativa de
-la profundidad.
-
-Si además conocemos la calibración (es decir, la imagen de la cónica absoluta), podemos 
-trabajar con la \textbf{matriz esencial} $E$, que permite una reconstrucción métrica y, 
-por tanto, un mapa de profundidad en unidades reales. 
+\newpage
 
 %----------------------------------------------------------------------------------------
 %	CÁMARA
@@ -213,13 +122,9 @@ por tanto, un mapa de profundidad en unidades reales.
 
 \section{Cámaras}
 
-En esta sección vamos a hablar de las cámaras. La idea es trasladar la noción intuitiva que tenemos sobre una cámara a un objeto matemático formal con el que poder trabajar.
+En esta sección vamos a hablar de las cámaras. La idea es trasladar la noción intuitiva que tenemos sobre una cámara a un objeto matemático formal con el que poder operar.
 
-Si lo pensamos, lo que hace una cámara es proyectar un objeto del mundo tridimensional a una superficie bidimensional; es decir, se trata de una aplicación $c: \mathbb{R}^3 \rightarrow \mathbb{R}^2$. Con esta idea podemos dar una definición de lo que es una cámara:
-
-\begin{definition}[Cámara]
-    Una cámara es una transformación proyectiva desde el espacio proyectivo tridimensional $P\mathbb{R}^3$ al plano proyectivo bidimensional $P\mathbb{R}^2$.
-\end{definition}
+Conceptualmente, una cámara proyecta un objeto del mundo tridimensional sobre una superficie bidimensional. De manera informal, se puede establecer que una cámara actúa como una aplicación del espacio proyectivo tridimensional al bidimensional. Sin embargo, no cualquier proyección $\mathbb{P}^3_\mathbb{R} \rightarrow \mathbb{P}^2_\mathbb{R}$ constituye un modelo de cámara válido, sino que tendrá que cumplir una serie de condiciones geométricas. Concretamente, se busca modelar una proyección cónica.
 
 Para ver como modelamos está proyección vamos a ver primero un pequeño modelo físico.
 
@@ -283,38 +188,58 @@ Una de las cámaras más simples que se pueden construir es la cámara estenopei
     \label{pinhole_camera}
 \end{figure}
 
-Para modelar matemáticamente esta proyección, vamos a definir primero un par de conceptos.
-
-\begin{definition}[Centro óptico]
-    El centro óptico de la cámara se define formalmente como el núcleo (o espacio nulo) de la matriz de proyección $P$. Como veremos, su núcleo tiene dimensión 1,es decir, es un único punto $C \in \mathbb{P}^3$ tal que:
-    \[
-        P \cdot C = \mathbf{0}
-    \]
-\end{definition} 
-\vspace{2ex}
-
-\begin{observacion}
-    Si nos fijamos en la Figura \ref{fig:pinhole_fisica}, podemos ver que el centro óptico es precisamente el pequeño agujero o estenopo que deja pasar la luz. Vamos a suponer que es suficientemente pequeño como para modelarlo como un único punto. Y efectivamente, al ser el núcleo de la aplicación, no esta definida la imagen de $C$.
-\end{observacion}
-
-\begin{definition}[Referencia cartesiana de la cámara y Eje principal]
-    Al deshomogeneizar el espacio proyectivo, pasamos a trabajar en el espacio afín euclídeo tridimensional. Para formular el modelo, establecemos primero una referencia cartesiana ortonormal situando su origen en el centro óptico $\mathbf{C}$. Definimos el \textit{eje principal} (o eje óptico) haciéndolo coincidir con el eje $Z$ de esta referencia. El \textit{plano de la imagen} queda determinado de forma perpendicular a esta dirección $Z$. El punto de intersección entre el eje principal y el plano de la imagen se denomina \textit{punto principal}, denotado por $\mathbf{p}$.
+\begin{definition}[Cámara ideal]
+    Se define la cámara ideal como un par $(\mathcal{R}, f)$, donde $\mathcal{R} = \{C; v_1, v_2, v_3\}$ es una referencia cartesiana ortonormal, $C$ se denomina centro óptico y $f \in \mathbb{R}^+$ distancia focal. 
 \end{definition}
 \vspace{2ex}
 
-\begin{definition}[Distancia focal]
-    Se define la \textit{distancia focal}, denotada por $f$, como la distancia euclídea entre el centro óptico $\mathbf{C}$ y el punto principal $\mathbf{p}$. Algebraicamente, $f$ actúa como el factor de escala intrínseco que relaciona el espacio tridimensional con el plano de proyección.
-\end{definition} 
+\begin{observacion}
+    Si nos fijamos en la Figura \ref{fig:pinhole_fisica}, podemos ver que el centro óptico es precisamente el pequeño agujero o estenopo que deja pasar la luz. Vamos a suponer que es suficientemente pequeño como para modelarlo como un único punto.
+\end{observacion}
+
+\begin{definition}[Plano imagen]
+    Al plano $H = C + fv_3 + \mathcal{L}(\{v_1, v_2\})$ lo denominaremos plano imagen.
+\end{definition}
 \vspace{2ex}
 
-Con estos conceptos ya podemos calcular la matriz de proyección para esta configuración.
+\begin{definition}[Eje principal]
+    A la recta $r = C + \mathcal{L}(\{v_3\})$ se le denomina \textit{eje principal} o eje óptico; mientras que el punto $p = H \cap r$ se denomina \textit{punto principal}.
+\end{definition}
+\vspace{2ex}
 
-Fijamos nuestro sistema de referencia proyectivo situando el centro óptico en el origen, $\mathbf{C} = (0,0,0,1)^T$, y alineamos el eje óptico con el eje $Z$. Tal y como se estableció, el plano de la imagen se ubica en $Z = f$.
+\begin{observacion}
+    Por definición, el eje principal es ortogonal al plano imagen y, además, el punto principal es el punto tal que $d(C, H) = d(C, p) = f$.
+\end{observacion}
 
-Dado un punto tridimensional en coordenadas homogéneas $\mathbf{X} = (X, Y, Z, 1)^T$, su proyección sobre el plano de la imagen resulta en un punto bidimensional. Si temporalmente deshomogeneizamos para observar el espacio afín, la semejanza de triángulos dicta que las coordenadas de la proyección son:
+Con esto, vamos a pasar a calcular la matriz de la proyección cónica de la cámara con centro en el centro óptico sobre el plano imagen.
+
+En coordenadas de la cámara, para un punto $\mathbf{X}=(X, Y, Z)$, la imagen de la proyección es el punto de la recta que interseca con el plano imagen:
+
 \[
-    x = f \frac{X}{Z}, \quad y = f \frac{Y}{Z}
+\begin{cases}
+    t(X, Y, Z) + (1-t)(0,0,0), \quad t \in \mathbb{R} \\
+    H: Z - f = 0
+\end{cases}
 \]
+
+Esta intersección ocurre en $t = \frac{f}{Z}$, por lo que la proyección queda como:
+\[
+    (X, Y, Z) \longmapsto \left( \frac{f}{Z} X, \frac{f}{Z} Y, f \right)
+\]
+
+La expresión de esta proyección cónica se realiza matricialmente en el espacio proyectivo. Por ello, vamos a tomar las coordenadas homogéneas de la referencia $\tilde{\mathcal{R}}$ asociada a la referencia afín de la cámara, $\mathcal{R}$, en el espacio proyectivo $\mathbb{P}^3$ (completado proyectivo del espacio afín).
+
+\[
+    (X:Y:Z:1) \longmapsto (fX:fY:fZ:Z)
+\]
+
+Eliminamos la tercera coordenada de la imagen ya que únicamente consideramos el plano, cuya dirección corresponde a las dos primeras coordenadas del afín:
+
+\[
+    (X:Y:Z:1) \longmapsto (fX:fY:Z) \in \tilde{H}
+\]
+
+donde $\tilde{H}$ es el completado proyectivo de $H$, en el cual consideramos las coordenadas proyectivas inducidas por la referencia afín $\mathcal{R}_H = \{C + fv_3; v_1, v_2\}$.
 
 \begin{figure}[H]
     \centering
@@ -367,7 +292,7 @@ Dado un punto tridimensional en coordenadas homogéneas $\mathbf{X} = (X, Y, Z, 
     \label{fig:semejanza_triangulos}
 \end{figure}
 
-Para expresar esta relación como una aplicación lineal continua en el espacio proyectivo, definimos el punto proyectado en $\mathbb{P}^2$ como $\mathbf{x} = (x, y, 1)^T$. Algebraicamente, la transformación se formula como:
+Entonces, podemos expresar esta relación matricialmente en estas referencias como:
 \[
     \begin{pmatrix}
         x \\
@@ -394,13 +319,7 @@ Para expresar esta relación como una aplicación lineal continua en el espacio 
     \end{pmatrix}
 \]
 
-Fijado el sistema de referencia en el centro óptico, la matriz $P_0$ depende exclusivamente de un único parámetro. Por esta razón, la cámara estenopeica ideal queda matemáticamente determinada en su totalidad por su centro $c$ su distancia focal $f$.
-
-Esto nos motiva a dar la siguiente definición:
-
-\begin{definition}[Cámara ideal]
-    Se define la cámara ideal como un par $(R, f)$, donde $R = (C, \mathcal{B})$ es una referencia cartesiana ortonormal (con origen $C \in \mathbb{R}^3$ y base ortonormal $\mathcal{B}$ del espacio $\mathbb{R}^3$), y $f \in \mathbb{R}^+$ es la distancia focal.
-\end{definition}
+Algo muy importante es que no estamos trabajando sobre una única referencia cartesiana; se trabaja con la referencia de la cámara $\mathcal{R} = \{C; v_1, v_2, v_3\}$ (entrada) y con la referencia del plano imagen $\mathcal{R}_H = \{C+fv_3; v_1, v_2\}$ (salida), en las que se toman coordenadas homogéneas.
 
 \subsection{Generalización del modelo ideal}
 
@@ -408,7 +327,7 @@ Al formular el modelo de la cámara ideal hemos partido de ciertas simplificacio
 
 \subsubsection{Desplazamiento del punto principal}
 
-En el modelo ideal, asumimos que el origen de coordenadas del plano de la imagen coincide exactamente con el punto principal $\mathbf{p}$. Sin embargo, en la práctica, el sistema de coordenadas de la imagen no tiene porque cumplirse y mucho modelos, tiene su origen en una esquina.
+En el modelo ideal, asumimos que el origen de coordenadas del plano de la imagen coincide exactamente con el punto principal $\mathbf{p}$. Sin embargo, en la práctica, esta condición no tiene por qué cumplirse y muchos modelos tienen su origen en una esquina de la imagen.
 
 Para corregir esto, introducimos un desplazamiento o traslación en el plano de la imagen. Si denotamos las coordenadas del punto principal en el sistema de referencia de la imagen como $(p_x, p_y)^T$, la proyección geométrica de un punto espacial $(X, Y, Z)^T$ pasa a ser:
 \[
@@ -436,61 +355,34 @@ Para expresar esta traslación de forma lineal mediante coordenadas homogéneas,
     \end{pmatrix}
 \]
 
-De este modo, podemos la matriz de proyección queda como:
+De este modo, la matriz de proyección queda como:
 \[
     P = \begin{pmatrix} f & 0 & p_x & 0 \\ 0 & f & p_y & 0 \\ 0 & 0 & 1 & 0 \end{pmatrix}
 \]
 
 \subsubsection{Posición y orientación}
 
-Hasta ahora se había asumido que la referencia cartesiana de la cámara coincidía con la referencia global del espacio tridimensional. Sin embargo, al modelar una escena general, y especialmente al tratar con varias cámaras simultáneamente, los puntos del espacio se expresan respecto a una referencia cartesiana global.
+Hasta ahora se había asumido que la referencia cartesiana de la cámara coincidía con la referencia global del espacio tridimensional. Sin embargo, las coordenadas del espacio no tienen por qué coincidir con las de la cámara; necesitamos realizar un cambio de referencia, $C_{\mathcal{R}_c\mathcal{R}}$, de la referencia estándar $\mathcal{R}_c$ a la de la cámara $\mathcal{R}$. Este se puede realizar en dos pasos:
 
-Dado que tanto la referencia del mundo como la de la cámara se exigen ortonormales, la transformación entre ambas consiste exclusivamente en una isometría del espacio euclídeo, es decir, una rotación y una traslación.
+\begin{itemize}
+    \item \textbf{De la referencia estándar $\mathcal{R}_c$ a la referencia $\mathcal{R}_c' = \{C; \vec{e}_1, \vec{e}_2, \vec{e}_3\}$,} que se puede realizar mediante una traslación por el vector $-\vec{OC}$:
+    \[
+        \left( \begin{array}{c|c} I_3 & -\vec{OC} \\ \hline 0 & 1 \end{array} \right).
+    \]
+    \item \textbf{y de la referencia $\mathcal{R}_c'$ a $\mathcal{R}$,} que es un cambio de base. En este caso, como las bases son ortonormales, el cambio de base puede verse como una rotación $R$:
+    \[
+        \left( \begin{array}{c|c} R & 0 \\ \hline 0 & 1 \end{array} \right).
+    \]
+\end{itemize}
 
-Geométricamente, para transformar un punto $\mathbf{X}_{\text{mundo}}$ al sistema local de la cámara, primero calculamos el vector relativo desde el centro óptico al punto, es decir, $(\mathbf{X}_{\text{mundo}} - \mathbf{C})$. A continuación, rotamos este vector para alinear los ejes del mundo con los de la cámara multiplicando por una matriz de rotación $R \in SO(3)$. Esta matriz está determinada por los ángulos que forman los ejes de ambas referencias.
-
-Podemos definir esta matriz de forma constructiva: si la orientación de la cámara viene dada por una base ortonormal cuyos vectores unitarios direccionales son $\mathbf{u}, \mathbf{v}, \mathbf{w}$ expresados en las coordenadas del mundo, las filas de la matriz de rotación $R$ están formadas exactamente por estos vectores transpuestos:
+Así, en conjunto, el cambio de referencia es:
 \[
-    R = \begin{pmatrix} \mathbf{u}^T \mathbf{v}^T \mathbf{w}^T \end{pmatrix}
-\]
-
-La expresión afín del cambio de coordenadas en el espacio tridimensional es:
-\[
-    \mathbf{X}_{\text{cam}} = R (\mathbf{X}_{\text{mundo}} - \mathbf{C}) = R \mathbf{X}_{\text{mundo}} - R \mathbf{C}
-\]
-
-Al pasar a coordenadas homogéneas, esta transformación se escribe de forma matricial utilizando notación por bloques. Siendo $R$ una matriz de $3 \times 3$, $-R\mathbf{C}$ un vector columna de $3 \times 1$ y $\mathbf{0}^T = (0,0,0)$ un vector fila, la matriz de transformación afín es de $4 \times 4$:
-\[
-    \begin{pmatrix}
-        \mathbf{X}_{\text{cam}} \\
-        1
-    \end{pmatrix}
-    =
-    \begin{pmatrix}
-        R_{3 \times 3} & (-R\mathbf{C})_{3 \times 1} \\
-        \mathbf{0}^T_{1 \times 3} & 1
-    \end{pmatrix}
-    \begin{pmatrix}
-        \mathbf{X}_{\text{mundo}} \\
-        1
-    \end{pmatrix}
-\]
-
-De esta deducción se extrae que el vector de traslación genérico de la cámara es $\mathbf{t} = -R\mathbf{C} \in \mathbb{R}^3$. Esta representación desvincula la rotación $R$ (orientación pura) de la traslación dependiente de la posición espacial del centro óptico $\mathbf{C}$.
-
-Una vez el punto se encuentra en el sistema de referencia local de la cámara, se le puede aplicar directamente la matriz de calibración intrínseca para obtener su proyección en el plano de la imagen:
-\[
-    \mathbf{x} = K [I_{3 \times 3} \mid \mathbf{0}_{3 \times 1}] \begin{pmatrix} R & \mathbf{t} \\ \mathbf{0}^T & 1 \end{pmatrix} \begin{pmatrix} \mathbf{X}_{\text{mundo}} \\ 1 \end{pmatrix} = K [R \mid \mathbf{t}] \begin{pmatrix} \mathbf{X}_{\text{mundo}} \\ 1 \end{pmatrix}
-\]
-
-De este modo, la matriz de proyección general de la cámara $P$, de dimensiones $3 \times 4$, queda definida algebraicamente como el producto de sus parámetros intrínsecos y extrínsecos:
-\[
-    P = K [R \mid \mathbf{t}]
+    C_{\mathcal{R}_c\mathcal{R}} = \left( \begin{array}{c|c} R & 0 \\ \hline 0 & 1 \end{array} \right) \left( \begin{array}{c|c} I_3 & -\vec{OC} \\ \hline 0 & 1 \end{array} \right) = \left( \begin{array}{c|c} R & -R \cdot \vec{OC} \\ \hline 0 & 1 \end{array} \right).
 \]
 
 \subsubsection{Píxeles no cuadrados y relación de aspecto}
 
-Hasta ahora hemos considerado que ambos ejes de la imagen escalan de la misma forma geométrica. Sin embargo, en ciertos modelos de cámara, como puede ser aquellos equipados con sensores CCD, los elementos fotosensibles tienen forma rectangular en lugar de cuadrada. 
+Hasta ahora hemos considerado que ambos ejes de la imagen escalan de la misma forma geométrica. Sin embargo, en ciertos modelos de cámara, como aquellos equipados con sensores CCD, los elementos fotosensibles tienen forma rectangular en lugar de cuadrada. 
 
 En consecuencia, el sistema de coordenadas de los píxeles pierde la condición de normalidad. Para modelar este escalado asimétrico, se introducen dos factores $k_x$ y $k_y$, que representan la densidad de píxeles por unidad de longitud en las direcciones horizontal y vertical. Esto desdobla la distancia focal en dos parámetros independientes, $f_x = f \cdot k_x$ y $f_y = f \cdot k_y$, modificando la matriz de calibración intrínseca $K$:
 \[
@@ -501,23 +393,71 @@ En consecuencia, el sistema de coordenadas de los píxeles pierde la condición 
     \end{pmatrix}
 \]
 
+El producto de ambas matrices
+\[
+    \begin{pmatrix}
+        y_1 \\
+        y_2 \\
+        1
+    \end{pmatrix}
+    =
+    \underbrace{
+    \begin{pmatrix}
+        \alpha_x & s & x_0 & 0 \\
+        0 & \alpha_y & y_0 & 0 \\
+        0 & 0 & 1 & 0
+    \end{pmatrix}
+    \left( \begin{array}{c|c}
+        R & -R \cdot \vec{OC} \\ \hline
+        0 & 1
+    \end{array} \right)
+    }_{P}
+    \begin{pmatrix}
+        x_1 \\
+        x_2 \\
+        x_3 \\
+        1
+    \end{pmatrix}
+\]
+se conoce como matriz de la cámara. Se pueden reorganizar los elementos de la matriz de la siguiente manera:
+\[
+    P = K \cdot R \cdot \begin{pmatrix} I_3 & -\vec{OC} \end{pmatrix},
+\]
+donde $K$ es la matriz de calibración (que es triangular superior).
+
 \subsubsection{La cámara finita general}
 
-Como hemos deducido en las secciones anteriores, la matriz de proyección general de la cámara se puede descomponer explícitamente aislando su centro óptico $\mathbf{C}$ de la siguiente manera:
+Como hemos deducido en las secciones anteriores, la matriz de proyección general de la cámara se puede descomponer explícitamente aislando su centro óptico de la siguiente manera:
 \[
-    P = K R [I_{3 \times 3} \mid -\mathbf{C}]
+    P = K R [I_3 \mid -\vec{OC}]
 \]
 Esta expresión agrupa los 11 grados de libertad del modelo en dos conjuntos fundamentales:
 \begin{itemize}
-    \item \textbf{Parámetros intrínsecos (matriz $K$):} Definen las propiedades internas y la geometría del sensor y son las distancias focales $f_x, f_y$ y el punto principal $(p_x, p_y)$.
-    \item \textbf{Parámetros extrínsecos (matriz $R$ y centro $\mathbf{C}$):} Definen la posición espacial: centro de proyección $\mathbf{C}$ y la orientación: rotación ortogonal $R$, de la cámara respecto al sistema de coordenadas global del mundo.
+    \item \textbf{Parámetros intrínsecos (matriz $K$):} Definen las propiedades internas y la geometría del sensor, correspondientes a las distancias focales $\alpha_x, \alpha_y$, el factor de deformación o \textit{skew} $s$, y el punto principal $(x_0, y_0)$.
+    \item \textbf{Parámetros extrínsecos (matriz $R$ y centro $\vec{OC}$):} Definen la posición espacial (centro de proyección $\vec{OC}$) y la orientación (rotación ortogonal $R$) de la cámara respecto al sistema de coordenadas global del mundo.
 \end{itemize}
 
 Esta formulación asume que el centro óptico es un punto real y finito del espacio. Algebraicamente, esto nos lleva a la siguiente definición:
 
 \begin{definition}[Cámara finita]
-    Una cámara proyectiva finita es aquella cuya matriz de proyección $P$, de dimensiones $3 \times 4$, se descompone como $P = [M \mid \mathbf{p}_4]$, donde la submatriz izquierda $M$ de $3 \times 3$ es no singular ($\det(M) \neq 0$).
+    Una cámara proyectiva finita es una matriz de proyección $P$, de dimensiones $3 \times 4$, se descompone como $P = [M \mid \mathbf{p}_4]$, donde la submatriz izquierda $M$ de $3 \times 3$ es no singular ($\det(M) \neq 0$).
 \end{definition}
+
+\textbf{Proposición:} La aplicación de la cámara tiene un único punto perteneciente a su núcleo, el cual coincide con el centro óptico de la misma.
+
+\textit{Demostración:} Para demostrar la unicidad del punto del núcleo, recordamos que la matriz de proyección de una cámara finita se descompone por bloques como $P = [M \mid \mathbf{p}_4]$. Al buscar los puntos en coordenadas homogéneas $\mathbf{X} = (\mathbf{x}^T, 1)^T$ que pertenecen al espacio nulo ($P\mathbf{X} = \mathbf{0}$), se plantea el siguiente sistema de ecuaciones lineales afín:
+\[
+    M\mathbf{x} + \mathbf{p}_4 = \mathbf{0} \implies M\mathbf{x} = -\mathbf{p}_4
+\]
+Dado que la submatriz $M$ de dimensiones $3 \times 3$ es no singular por definición ($\det(M) \neq 0$), el teorema de Rouché-Frobenius garantiza que el sistema es compatible determinado. Por tanto, existe una única solución en el espacio afín finatada por $\mathbf{x} = -M^{-1}\mathbf{p}_4$. 
+
+Por otra parte, si se analizan los puntos del del infinito de la forma $\mathbf{X}_\infty = (\mathbf{x}^T, 0)^T$, la condición de núcleo impone que $M\mathbf{x} = \mathbf{0}$. Al ser $M$ invertible, la única solución posible es la trivial $\mathbf{x} = \mathbf{0}$, la cual carece de sentido geométrico en el espacio proyectivo $\mathbb{P}^3$. Esto concluye que el núcleo es un subespacio vectorial de dimensión 1 que induce un único punto afín en el espacio proyectivo.
+
+En cuanto a la coincidencia con el centro óptico geométrico, esta propiedad se deriva de la propia definición constructiva de la cámara. Si fijamos el origen de la referencia local de la cámara en dicho centro óptico $\mathbf{C}$, la recta afín que conecta a $\mathbf{C}$ con un punto genérico del espacio $\mathbf{A}$ se parametriza como $\mathbf{X}(t) = t\mathbf{A} + (1-t)\mathbf{C}$ con $t \in \mathbb{R}$. Al aplicar la transformación lineal lineal $P$, y sabiendo que $P\mathbf{C} = \mathbf{0}$ por ser $\mathbf{C}$ el elemento del núcleo, obtenemos:
+\[
+    P\mathbf{X}(t) = tP\mathbf{A} + (1-t)P\mathbf{C} = tP\mathbf{A}
+    \]
+En el completado proyectivo, los vectores homólogos coordenados que son proporcionales por un factor de escala no nulo representan el mismo punto proyectivo. Así, para todo $t \neq 0$, se verifica que $[P\mathbf{X}(t)] = [P\mathbf{A}]$. Esto demuestra formalmente que todos los puntos de la recta colapsan sobre el mismo punto del plano imagen, comportándose como una proyección cónica cuyo vértice es el centro óptico.
 
 \subsection{Cámaras en el infinito}
 
@@ -620,10 +560,10 @@ Este concepto es fundamental en la Visión por Computador para el análisis geom
 
 Para modelar analíticamente esta relación, consideramos dos cámaras finitas descritas por sus matrices de proyección $P_1$ y $P_2$, que actúan como aplicaciones lineales continuas sobre el espacio proyectivo:
 \[
-    P_1, P_2: P\mathbb{R}^3 \longrightarrow P\mathbb{R}^2
+    P_1, P_2: \mathbb{P}^3_\mathbb{R} \longrightarrow \mathbb{P}^2_\mathbb{R}
 \]
 
-Sea $\mathbf{X} \in P\mathbb{R}^3$ un punto de la escena tridimensional cuyas proyecciones en los respectivos planos imagen son los puntos $\mathbf{x}_1 = P_1 \mathbf{X}$ y $\mathbf{x}_2 = P_2 \mathbf{X}$. 
+Sea $\mathbf{X} \in \mathbb{P}^3_\mathbb{R}$ un punto de la escena tridimensional cuyas proyecciones en los respectivos planos imagen son los puntos $\mathbf{x}_1 = P_1 \mathbf{X}$ y $\mathbf{x}_2 = P_2 \mathbf{X}$. 
 
 \begin{figure}[H]
     \centering
@@ -665,7 +605,7 @@ Algebraicamente, se puede calcular el epípolo como la proyección del centro ó
 
 \subsection{La Matriz Fundamental}
 
-La matriz fundamental es la representación algebraica de la geometría epipolar que establece la correspondencia geométrica entre dos vistas. A diferencia de una homografía, no constituye una aplicación punto a punto, sino una correlación proyectiva $F: P\mathbb{R}^2 \longrightarrow P\mathbb{R}^{2*}$, donde $P\mathbb{R}^{2*}$ es el espacio de las rectas del proyectivo $P\mathbb{R}^2$. Esta aplicación asigna a cada punto homogéneo de la primera imagen su recta epipolar correspondiente en el otro plano imagen. Algebraicamente, se representa mediante una matriz de dimensiones $3 \times 3$.
+La matriz fundamental es la representación algebraica de la geometría epipolar que establece la correspondencia geométrica entre dos vistas. A diferencia de una homografía, no constituye una aplicación punto a punto, sino una correlación proyectiva $F: \mathbb{P}^2_\mathbb{R} \longrightarrow \mathbb{P}^{2*}_\mathbb{R}$, donde $\mathbb{P}^{2*}_\mathbb{R}$ es el espacio de las rectas del proyectivo $\mathbb{P}^2_\mathbb{R}$. Esta aplicación asigna a cada punto homogéneo de la primera imagen su recta epipolar correspondiente en el otro plano imagen. Algebraicamente, se representa mediante una matriz de dimensiones $3 \times 3$.
 
 A continuación, se desarrolla la deducción analítica para obtener la expresión explícita de dicha matriz.
 
@@ -799,25 +739,385 @@ En un escenario real, las correspondencias automáticas contienen valores atípi
 \end{enumerate}
 
 \subsection{Matriz Esencial}
+El británico Christopher Longuet-Higgins introdujo la noción de matriz esencial con anterioridad a la matriz fundamental. 
+\begin{definition}[Cámara normalizada]
+Una cámara normalizada se conceptualiza como una cámara finita, tal que su distancia focal es unitaria.
+\end{definition}
+Esta matriz presupone dos cámaras normalizadas; por tanto, dado un par de cámaras $(C_1,1)$ y $(C_2,1)$, tenemos los puntos normalizados $\hat{x_1}$ y $\hat{x_2}$, tales que cumplen con la restricción epipolar: 
+\begin{equation}
+    \mathbf{\hat{x}}_2^{T} E \mathbf{\hat{x}}_1 = 0
+\end{equation}
+Por tanto, la matriz fundamental se considera una generalización de la matriz esencial donde se deja de asumir que las cámaras son normalizadas.  A continuación, se definen las propiedades de la matriz esencial:
+\subsubsection{Propiedades de la Matriz Esencial}
+La matriz esencial mantiene las propiedades estructurales de la matriz fundamental. Sin embargo, al tratarse de cámaras normalizadas tiene otras restricciones: 
+\begin{itemize}
+    \item \textbf{Rango y singularidad:} La matriz $E$, al igual que $F$, se trata de una matriz homogénea de tamaño $3 \times 3$ con rango estricto 2. Por tanto se deduce que el $\det(E) = 0$.
+    \item \textbf{Grados de libertad:} A diferencia de los 7 grados de libertad de $F$, $E$ tiene \textbf{5 grados de libertad}. El rango estricto 2 determina que $E$ tiene 7 grados de libertad como $F$. Pero la restricción adicional impuesta por las cámaras normalizadas obliga a que dos valores singulares sean iguales, lo que reduce los grados de libertad a 5.
+    \item \textbf{Valores singulares:} La matriz es esencial si y solo si cumple que sus valores singulares son de la forma: $(\sigma,\sigma,0)$, tal que $\sigma>0$. 
+\end{itemize}
 
+\subsubsection{Deducción de la Matriz Esencial}
+La deducción de la matriz esencial sigue el desarrollo utilizado para la matriz fundamental, con la restricción de cámaras normalizadas. Sin pérdida de generalidad, situamos el centro óptico de la primera cámara en $(0,0,0)^t$ y la segunda cámara queda determinada por una traslación $t$ y una rotación $R$. 
 
+\begin{enumerate}
+    \item El epípolo $\hat{e}_2$ es la proyección de $C_1$ sobre la segunda imagen. Al ser $C_1$ el origen y la segunda cámara normalizada, se cumple:
+    \[
+        \mathbf{\hat{e}}_2 = t
+    \]
+    \item Para un punto $\hat{x}_1$ de la primera imagen, visto desde la segunda cámara, se obtiene mediante una rotación:
+    \[
+        \mathbf{\hat{x}}'_2 = R\hat{x_1}
+    \]
+\end{enumerate}
 
+Como la línea epipolar la definimos como el producto vectorial del epipolo por la proyección: 
+\begin{equation}
+    \mathbf{\hat{l}}_2 = \mathbf{\hat{e}}_2 \times \mathbf{\hat{x}}'_2 = [\mathbf{t}]_\times \left( R \mathbf{\hat{x}}_1 \right)
+\end{equation}
 
+Imponiendo $\mathbf{\hat{x}}_2 \in \mathbf{\hat{l}}_2$,es decir, ${\hat{x}}_2\hat{l}_2=0$ se obtiene la siguiente ecuación:
+\begin{equation}
+    \mathbf{\hat{x}}_2^T \left( [\mathbf{t}]_\times R \right) \mathbf{\hat{x}}_1 = 0
+\end{equation}
 
+Comparando con la restricción epipolar, se obtiene: 
+\begin{equation}
+    E = [\mathbf{t}]_\times R
+\end{equation}
+
+\subsubsection{La extracción de cámaras a partir de la Matriz Esencial}Dada una matriz esencial, la primera cámara puede fijarse como $P_1=(I|0)$. La segunda cámara se obtiene a partir de la factorización de $E$ mediante la Descomposición en Valores Singulares. Por ser $E$ una matriz $3 \times 3$ y de $rangoE=2$, el Teorema de Descomposición en Valores Singulares garantiza la existencia de matrices ortogonales U y V tales que:
+\begin{equation}
+    E = Udiag(\sigma,\sigma,0)V^T 
+\end{equation}
+Dado que E es una matriz homogénea, sin pérdida de generalidad podemos fijar $\sigma=1$:
+\begin{equation}
+    E = Udiag(1,1,0)V^T 
+\end{equation}
+De esta ecuación se deduce que $u_3=t$, siendo $u_3$ la última columna de la matriz $U$. Esto se debe a las propiedades $\hat{e}_2=t$ y $E\hat{e}_2=0$,tal que $\hat{e}_2$ pertenece al núcleo de $E$. En la ecuación, el único vector en dicho núcleo es el $u_3$. 
+
+A partir del resultado aparecen dos ambigüedades independientes:
+\begin{itemize}
+    \item \textbf{Ambigüedad en la rotación:} La factorización de $E$ no es única; Existen dos rotaciones $R_1$ y $R_2$ compatibles con $E$. Este suceso es consecuencia directa de que los valores singulares de $E$ no nulos son iguales. Al ser iguales, la factorización admite dos soluciones distintas para la rotación compatibles con la matriz esencial.
+    \item \textbf{Ambigüedad en la traslación:} Dado que $E$ es homogénea, el sistema provoca que $E$ y $-E$ sean indistinguibles. Por tanto no se puede determinar el signo de $u_3$. 
+\end{itemize}
+
+A partir de estas ambigüedades se deduce que el problema tiene 4 soluciones. estas soluciones tienen la forma:
+\begin{equation}
+    P_2 \in \left\{ [R_1 \mid +u_3],\ [R_1 \mid -u_3],\ [R_2 \mid +u_3],\ [R_2 \mid -u_3] \right\}
+\end{equation}
+
+Las relaciones de las soluciones de $P_2$ se definen de la siguiente manera:
+\begin{itemize}
+    \item \textbf{Variación en la traslación:} Las soluciones 1,2,3 y 4 difieren dos a dos únicamente en el signo de la traslación.
+    \item \textbf{Variación en la rotación:} Las soluciones 1 y 3 se diferencian en la rotación. Una de las rotaciones es el resultado de aplicar una rotación de $180^{\circ}$ a la otra rotación. Esta ambigüedad se conoce como  \textbf{par trenzado}. 
+\end{itemize}
+
+Para calcular la solución correcta, se toma un punto $X$ cualquiera de la escena y se busca el par de matrices $P_1$ y $P_2$ tal que dicho punto se encuentre delante de ambas cámaras. En dos de ellas quedará detrás de una de las cámaras y en la última detrás de ambas. Por tanto basta con buscar una relación de puntos $x_1$ y $x_2$ para este cálculo.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{imagen_esencial.png}
+    \caption{Esta figura nos muestra las 4 soluciones del problema. Como se observa solo la solución a) es válida.}
+    \label{fig:Esencial}
+\end{figure}
+
+\newpage
 
 %----------------------------------------------------------------------------------------
-%	RESULTS AND DISCUSSION
+%	USOS GEOMETRIA EPIPOLAR
 %----------------------------------------------------------------------------------------
 
-\section{Conclusión}
+\section{Usos de la geometría epipolar}
+Finalmente, hemos puesto en práctica nuestros conocimientos de geometría epipolar
+en un programa que calcula un mapa de profundidad dadas dos imágenes estéreo.
+Las imágenes utilizadas están realizadas por cámaras con la misma referencia cartesiana
+y distancia focal.
 
+En este programa hacemos el cálculo de la matriz fundamental con el 
+algoritmo de los 8 puntos normalizado y creamos una estimación robusta con RANSAC.
+
+\subsection{Rectificación de imágenes}
+
+Con la matriz fundamental estimada, el siguiente paso es la
+\textit{rectificación} del par estéreo. El objetivo es transformar
+ambas imágenes mediante homografías $H_1$ y $H_2$ de forma que las
+líneas epipolares, que en general son oblicuas, queden alineadas
+horizontalmente y compartan la misma coordenada $y$ en ambas imágenes.
+
+Para lograrlo, se construye una homografía que envía el
+epípolo de cada imagen al punto del infinito $(1, 0, 0)^T$, haciendo
+que todas las líneas epipolares sean paralelas al eje $X$. Los pasos
+son los siguientes:
+
+\begin{enumerate}
+    \item \textbf{Traslación:} Se traslada el centro de la imagen al origen de coordenadas.
+    \item \textbf{Rotación:} Se rota la imagen para que el epípolo, expresado en coordenadas relativas al centro, quede alineado con el eje $X$ positivo.
+    \item \textbf{Transformación proyectiva:} Se aplica una transformación $G$ que envía el epípolo al infinito.
+\end{enumerate}
+
+La restricción fundamental que debe satisfacerse es que la escala y
+el desplazamiento vertical sean compartidos entre $H_1$ y
+$H_2$. Si cada homografía escalara su imagen de forma independiente,
+una fila $y = k$ en la imagen izquierda rectificada no correspondería
+a la fila $y = k$ en la derecha, invalidando la búsqueda horizontal
+de correspondencias. Solo el desplazamiento horizontal puede diferir
+entre ambas transformaciones, pues es precisamente esa diferencia la
+que codifica la disparidad.
+
+\subsection{Cómputo de la disparidad}
+
+Una vez rectificadas las imágenes, la búsqueda de correspondencias
+se reduce a un problema unidimensional: dado un píxel $(x, y)$ en
+la imagen izquierda, su correspondiente en la imagen derecha se
+encuentra necesariamente en la misma fila $y$, desplazado
+horizontalmente una cantidad $d$ denominada \textit{disparidad}.
+
+\begin{definition}[Disparidad]
+    Dados dos puntos correspondientes $\mathbf{x}_L = (x, y)$ en la imagen izquierda y $\mathbf{x}_R = (x', y)$ en la imagen derecha, se define la disparidad como:
+    $$d = x - x'$$
+\end{definition}
+
+\subsubsection{Dirección del desplazamiento}
+
+La dirección del desplazamiento no es arbitraria: viene determinada
+por la geometría del par estéreo. Sabiendo qué imagen corresponde
+a la cámara izquierda y cual a la derecha, observamos que un objeto 
+de la escena aparece desplazado hacia la \textit{izquierda} en la 
+imagen derecha respecto a su posición en la imagen izquierda. Por tanto, 
+la disparidad $d$ es siempre no negativa, y la búsqueda se realiza exclusivamente 
+en la dirección $x' = x - d$ con $d \in [0, d_{\max})$.
+
+Es necesario tener esta información, pues invertir esta dirección produce 
+un mapa de disparidad sistemáticamente incorrecto, con valores altos donde 
+deberían ser bajos y viceversa. Conocer qué cámara está a la derecha de cuál 
+es, por tanto, un requisito previo al cómputo.
+
+\subsubsection{Relación entre disparidad y profundidad}
+
+La relación entre disparidad y profundidad se deduce por semejanza de triángulos
+aplicada dos veces sobre el diagrama del par estéreo rectificado. Considera dos
+cámaras separadas una distancia $B$ (\textit{baseline}), ambas con distancia focal
+$f$ y con sus planos de imagen coplanarios tras la rectificación. Un punto
+$\mathbf{X}$ del espacio a profundidad $Z$ se proyecta en $x_L$ en la cámara
+izquierda y en $x_R$ en la derecha.
+
+Suponemos, sin pérdida de generalidad que el centro óptico de la cámara izquierda
+está en el origen. Para la cámara izquierda la semejanza de triángulos da:
+$$\frac{x_L}{f} = \frac{X}{Z} \implies x_L = \frac{fX}{Z}$$
+
+Para la cámara derecha, cuyo centro óptico está desplazado $B$ en el eje $X$,
+el mismo punto tiene coordenada $X - B$ relativa a ese centro:
+$$\frac{x_R}{f} = \frac{X - B}{Z} \implies x_R = \frac{f(X-B)}{Z}$$
+
+La disparidad es la diferencia de ambas proyecciones:
+$$d = x_L - x_R = \frac{fX}{Z} - \frac{f(X-B)}{Z} = \frac{fB}{Z}$$
+
+Despejando $Z$:
+\begin{equation}
+    Z = \frac{f \cdot B}{d}
+    \label{eq:depth}
+\end{equation}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale=1.2, >=Stealth, every node/.style={font=\small}]
+        % Parámetros geométricos
+        \def\B{5.5}     % Baseline (Distancia entre cámaras)
+        \def\f{2.2}     % Distancia focal
+        \def\Z{6.5}     % Profundidad Z
+        \def\X{4.0}     % Coordenada X del punto 3D
+
+        % Centros ópticos
+        \coordinate (CL) at (0,0);
+        \coordinate (CR) at (\B,0);
+        \filldraw (CL) circle (2pt) node[below left] {$\mathbf{C}_L$};
+        \filldraw (CR) circle (2pt) node[below right] {$\mathbf{C}_R$};
+
+        % Ejes ópticos (Z)
+        \draw[dashed, gray, ->] (CL) -- (0,\Z+0.8) node[above] {Eje $Z_L$};
+        \draw[dashed, gray, ->] (CR) -- (\B,\Z+0.8) node[above] {Eje $Z_R$};
+
+        % Línea base (Baseline)
+        \draw[thick, dashed] (CL) -- (CR);
+        \draw[<->] (0,-0.6) -- (\B,-0.6) node[midway, below] {$B$};
+
+        % Planos de imagen (rectificados y coplanarios)
+        \draw[thick, blue!80!black] (-1.5, \f) -- (2.5, \f) node[above left] {Plano imagen izq.};
+        \draw[thick, blue!80!black] (\B-2.5, \f) -- (\B+1.5, \f) node[above right] {Plano imagen der.};
+
+        % Intersección de los ejes ópticos con los planos de imagen
+        \coordinate (fL) at (0,\f);
+        \coordinate (fR) at (\B,\f);
+        \filldraw (fL) circle (1pt);
+        \filldraw (fR) circle (1pt);
+
+        % Punto 3D X
+        \coordinate (P3D) at (\X,\Z);
+        \filldraw (P3D) circle (2pt) node[above right] {$\mathbf{X} = (X, Y, Z)$};
+
+        % Rayos proyectivos
+        \draw[thick, orange!80!black] (CL) -- (P3D);
+        \draw[thick, orange!80!black] (CR) -- (P3D);
+
+        % Cálculo de las proyecciones usando las ecuaciones de semejanza
+        \pgfmathsetmacro{\xL}{\X * \f / \Z}
+        \coordinate (pL) at (\xL, \f);
+        \filldraw[red] (pL) circle (1.5pt) node[above left, text=red] {$x_L$};
+
+        \pgfmathsetmacro{\xR}{\B + (\X - \B) * \f / \Z}
+        \coordinate (pR) at (\xR, \f);
+        \filldraw[red] (pR) circle (1.5pt) node[above right, text=red] {$x_R$};
+
+        % Acotaciones de xL y xR (respecto a sus ejes ópticos locales)
+        \draw[<->] (0, \f-0.3) -- (\xL, \f-0.3) node[midway, below] {$x_L$};
+        \draw[<->] (\B, \f-0.3) -- (\xR, \f-0.3) node[midway, below] {$x_R$};
+
+        % Proyección del punto 3D sobre el eje X para el triángulo grande
+        \draw[dashed, gray] (P3D) -- (\X,0) coordinate (X_base);
+        
+        % Acotación de la profundidad Z
+        \draw[<->] (\X+0.3, 0) -- (\X+0.3, \Z) node[midway, right] {$Z$};
+
+        % Acotación de la distancia focal f
+        \draw[<->] (-0.8, 0) -- (-0.8, \f) node[midway, left] {$f$};
+        \draw[dashed, gray] (CL) -- (-1.0, 0);
+        \draw[dashed, gray] (-1.5, \f) -- (-1.0, \f);
+
+        % Acotación de X y (X-B)
+        \draw[<->] (0, 0.4) -- (\X, 0.4) node[midway, above] {$X$};
+        \draw[<->] (\X, 0.4) -- (\B, 0.4) node[midway, above] {$B-X$};
+
+        % Sombreado de los triángulos semejantes para la cámara izquierda
+        \fill[blue!10, opacity=0.5] (CL) -- (fL) -- (pL) -- cycle;
+        \fill[orange!10, opacity=0.3] (CL) -- (X_base) -- (P3D) -- cycle;
+
+    \end{tikzpicture}
+    \caption{Relación geométrica entre disparidad y profundidad mediante semejanza de triángulos en un par estéreo rectificado.}
+    \label{fig:triangulacion_stereo}
+\end{figure}
+
+Los términos $X$ se cancelan exactamente, lo que refleja el hecho geométrico
+de que la profundidad depende únicamente del desplazamiento horizontal entre
+las dos proyecciones, no de la posición lateral del punto en la escena.
+
+De la ecuación \eqref{eq:depth} se desprenden dos consecuencias
+directas: los objetos cercanos presentan disparidades grandes, y los
+objetos lejanos tienden a disparidad cero. Las zonas con $d = 0$
+no tienen correspondencia válida y se marcan como indefinidas en
+el mapa de profundidad.
+
+El rango de búsqueda $[0, d_{\max})$ es un parámetro crítico del
+algoritmo. Un valor demasiado pequeño impide encontrar correspondencias
+de objetos muy cercanos, uno demasiado grande introduce falsos matches
+en zonas sin textura.
+
+\subsubsection{Zonas sin correspondencia}
+
+No todos los píxeles tienen una correspondencia válida en la otra
+imagen. Existen dos causas principales:
+
+\begin{itemize}
+    \item \textbf{Oclusiones:} regiones visibles desde una cámara pero ocultas desde la otra por un objeto interpuesto. Son inevitables en cualquier par estéreo con baseline no nula.
+    \item \textbf{Regiones sin textura:} zonas uniformes donde la métrica de comparación produce el mismo coste para múltiples disparidades. En estos casos se puede aplicar un test de unicidad que descarta el match si el segundo mejor candidato es demasiado parecido al mejor.
+\end{itemize}
+
+Ambos casos se manifiestan como píxeles con $d = 0$ en el mapa
+de disparidad y, por la ecuación \eqref{eq:depth}, como zonas
+negras en el mapa de profundidad.
+
+\subsubsection{Resultados}
+
+A continuación se muestran las dos imágenes estéreo de entrada y el mapa de
+profundidad obtenido tras la rectificación, el cómputo de disparidad y la
+conversión mediante la ecuación~\eqref{eq:depth}.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{im0.png}
+        \caption{Imagen izquierda.}
+        \label{fig:im0}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[t]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{im1.png}
+        \caption{Imagen derecha.}
+        \label{fig:im1}
+    \end{subfigure}
+    \caption{Par estéreo de entrada.}
+    \label{fig:stereo_input}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\textwidth]{depth_color.png}
+    \caption{Mapa de profundidad obtenido. Los tonos cálidos indican objetos
+    cercanos (disparidad grande) y los tonos fríos objetos lejanos (disparidad
+    pequeña). Las zonas negras corresponden a píxeles sin correspondencia válida.}
+    \label{fig:depth}
+\end{figure}
+
+\subsection{Triangulación y Reconstrucción Métrica}
+
+El cálculo de la disparidad nos proporciona el valor de la profundidad $Z$ para cada píxel de la imagen base. Sin embargo, esta coordenada $Z$ está expresada únicamente en el sistema de referencia local de la cámara izquierda. Para lograr una verdadera reconstrucción tridimensional de la escena, es necesario recuperar las tres coordenadas espaciales $(X, Y, Z)^T$ reales de cada punto.
+
+Conocida la profundidad $Z$ calculada mediante la ecuación \eqref{eq:depth}, podemos invertir las ecuaciones de la proyección geométrica ideal. Dado un píxel $(x_L, y)$ en la imagen rectificada y conociendo la distancia focal $f$, las coordenadas tridimensionales euclídeas se recuperan de forma directa multiplicando por la profundidad obtenida:
+$$X = \frac{x_L \cdot Z}{f}, \quad Y = \frac{y \cdot Z}{f}$$
+
+De este modo, obtenemos el vector de coordenadas locales $\mathbf{X}_{\text{cam}} = (X, Y, Z)^T$ respecto al centro óptico de la cámara. El último paso consiste en trasladar esta nube de puntos al sistema de coordenadas global del mundo. Para ello, aplicamos la transformación geométrica inversa definida por los parámetros extrínsecos de la cámara (la matriz de rotación $R$ y el vector de traslación $\mathbf{t}$):
+$$\mathbf{X}_{\text{mundo}} = R^{-1} (\mathbf{X}_{\text{cam}} - \mathbf{t})$$
+
+Mediante este proceso de triangulación, la aplicación de la matriz fundamental y la geometría epipolar trasciende la mera búsqueda bidimensional, permitiendo elevar la información plana de las imágenes a un modelo métrico tridimensional de la escena original.
+
+\newpage
+
+%----------------------------------------------------------------------------------------
+%    RESULTADOS, APLICACIONES Y CONCLUSIONES
+%----------------------------------------------------------------------------------------
+
+\section{Resultados, aplicaciones y conclusiones}
+
+\subsection{Implementación práctica y resultados experimentales}
+
+El desarrollo teórico expuesto en las secciones anteriores se ha materializado en un programa en Python capaz de generar un mapa de profundidad a partir de un par estéreo. 
+Al analizar los mapas de disparidad y profundidad obtenidos, se observa que, si bien la estructura tridimensional de la escena se recupera correctamente, existe un cierto nivel de ruido y zonas de oclusión no resueltas. Estos resultados son esperables y se justifican al contrastar nuestro modelo geométrico ideal con la realidad física e industrial:
+
+\begin{itemize}
+    \item \textbf{Limitaciones ópticas frente al modelo estenopeico:} Nuestro desarrollo algebraico asume una cámara estenopeica perfecta, donde la luz converge en un único punto adimensional. En la práctica, la mayoría de cámaras modernas utilizan sistemas de lentes complejas que introducen distorsión radial y tangencial. En la industria estas imágenes se preprocesan para rectificar la deformación óptica. Cualquier error residual en la calibración rompe la linealidad estricta asumida por la matriz de cámara $P = K[R \mid \mathbf{t}]$.
+    \item \textbf{Filtrado algorítmico local:} Nuestro enfoque realiza una búsqueda unidimensional por bloques (\textit{Block Matching}) estrictamente local. Los algoritmos comerciales modernos aplican capas adicionales de optimización global (como \textit{Semi-Global Matching} o SGM) e imponen restricciones de suavidad espacial para eliminar el ruido y así conseguir sacar un mejor mapa de profundidad.
+\end{itemize}
+
+Pese a estas limitaciones, el valor de la geometría epipolar reside precisamente en su abstracción y sencillez. Permite condensar la compleja propagación de la luz en el espacio tridimensional en una estructura matricial lineal altamente eficiente, permitiendo calcular triangulaciones mediante operaciones elementales de álgebra lineal óptimas para la computación moderna.
+
+\subsection{La perspectiva biológica: ¿Por qué tenemos dos ojos?}
+
+La geometría epipolar no sólo es un artefacto matemático empleado en la ingeniería para la visión por ordenador, sino la formalización analítica de una solución evolutiva. Desde una perspectiva geométrica, un único ojo humano actúa como un sistema proyectivo $\mathbb{P}^3_\mathbb{R} \rightarrow \mathbb{P}^2_\mathbb{R}$. En esta transformación, se produce una pérdida de dimensión irrecuperable: se perdería todo la información sobre la profundidad. Así, con una sola vista existe una ambigüedad de escala intrínseca que impide discernir si un objeto es pequeño y cercano o grande y distante.
+
+La naturaleza resuelve esta singularidad dotando a muchos animales, entre ellos el humano, de un par de ojos frontales separados por una distancia fija. El cerebro humano opera, de forma inconsciente, como el algoritmo de triangulación que hemos modelado: localiza puntos homólogos en las imágenes de ambas retinas, evalúa su desplazamiento horizontal (la disparidad) y aplica el principio de semejanza de triángulos $Z = \frac{f \cdot B}{d}$ para percibir instantáneamente el relieve y la profundidad real del entorno.
+
+Esto se puede observar de forma práctica en las personas que han perdido la visión en uno de los ojos. Si bien no desaparece completamente el sentido de la profundidad, éste sí se ve gravemente afectado y reducido.
+
+\subsection{Otras aplicaciones en la tecnología actual}
+
+Las restricciones geométricas deducidas en este trabajo se extienden más allá de la configuración clásica de un par estéreo fijo, constituyendo el núcleo de diversas tecnologías de vanguardia:
+
+\begin{itemize}
+    \item \textbf{Robótica y conducción autónoma:} Los vehículos modernos emplean sistemas de visión estéreo para mapear el entorno y detectar obstáculos en tiempo real. La geometría epipolar permite calcular distancias con alta precisión de forma pasiva, sin la necesidad de emitir señales como hacen los sistemas LIDAR o de radar.
+    \item \textbf{Estructura a partir del Movimiento (SfM) y SLAM:} Las bases de la matriz fundamental y esencial se aplican también a sistemas de cámara única que se desplazan en el tiempo. Al extraer correspondencias entre fotogramas sucesivos, el movimiento de la propia cámara genera la línea base necesaria, permitiendo la localización y el mapeo simultáneo (SLAM), tecnología indispensable en la Realidad Aumentada y la fotogrametría mediante drones.
+\end{itemize}
+
+En conclusión, la geometría epipolar establece un puente directo entre el álgebra lineal teórica y la percepción espacial, demostrando ser un modelo sumamente útil en la visión por ordenador. Proporciona una herramienta geométrica fiable y, sobre todo, más rápida que algunas alternativas puramente basadas en inteligencia artificial y aprendizaje automático.
+
+\newpage
 
 %----------------------------------------------------------------------------------------
 %	BIBLIOGRAPHY
 %----------------------------------------------------------------------------------------
 
-\renewcommand{\refname}{\spacedlowsmallcaps{References}} % For modifying the bibliography heading
+\renewcommand{\refname}{\spacedlowsmallcaps{Referencias}} % For modifying the bibliography heading
 
+\nocite{*}
 \bibliographystyle{unsrt}
 
 \bibliography{sample.bib} % The file containing the bibliography
