@@ -403,7 +403,7 @@ El producto de ambas matrices
     =
     \underbrace{
     \begin{pmatrix}
-        \alpha_x & s & x_0 & 0 \\
+        \alpha_x & 0 & x_0 & 0 \\
         0 & \alpha_y & y_0 & 0 \\
         0 & 0 & 1 & 0
     \end{pmatrix}
@@ -431,11 +431,13 @@ Como hemos deducido en las secciones anteriores, la matriz de proyección genera
 \[
     P = K R [I_3 \mid -\vec{OC}]
 \]
-Esta expresión agrupa los 11 grados de libertad del modelo en dos conjuntos fundamentales:
+Esta expresión agrupa los 10 grados de libertad del modelo en dos conjuntos fundamentales:
 \begin{itemize}
-    \item \textbf{Parámetros intrínsecos (matriz $K$):} Definen las propiedades internas y la geometría del sensor, correspondientes a las distancias focales $\alpha_x, \alpha_y$, el factor de deformación o \textit{skew} $s$, y el punto principal $(x_0, y_0)$.
+    \item \textbf{Parámetros intrínsecos (matriz $K$):} Definen las propiedades internas y la geometría del sensor, correspondientes a las distancias focales $\alpha_x, y el punto principal $(x_0, y_0)$.
     \item \textbf{Parámetros extrínsecos (matriz $R$ y centro $\vec{OC}$):} Definen la posición espacial (centro de proyección $\vec{OC}$) y la orientación (rotación ortogonal $R$) de la cámara respecto al sistema de coordenadas global del mundo.
 \end{itemize}
+
+Algunas fuentes hacen una generalización mayor y añaden que puede haber un ángulo con el plano imagen, haciendo que el eje $v_3$ no sea ortogonal al plano, se denota por $s$ y se llama \textit{skew}. Esto daría 11 parámetros en vez de nuestros 10 pero, sería equivalente sólo que hemos supuesto que $s=0$.
 
 Esta formulación asume que el centro óptico es un punto real y finito del espacio. Algebraicamente, esto nos lleva a la siguiente definición:
 
@@ -451,7 +453,7 @@ Esta formulación asume que el centro óptico es un punto real y finito del espa
 \]
 Dado que la submatriz $M$ de dimensiones $3 \times 3$ es no singular por definición ($\det(M) \neq 0$), el teorema de Rouché-Frobenius garantiza que el sistema es compatible determinado. Por tanto, existe una única solución en el espacio afín finatada por $\mathbf{x} = -M^{-1}\mathbf{p}_4$. 
 
-Por otra parte, si se analizan los puntos del del infinito de la forma $\mathbf{X}_\infty = (\mathbf{x}^T, 0)^T$, la condición de núcleo impone que $M\mathbf{x} = \mathbf{0}$. Al ser $M$ invertible, la única solución posible es la trivial $\mathbf{x} = \mathbf{0}$, la cual carece de sentido geométrico en el espacio proyectivo $\mathbb{P}^3$. Esto concluye que el núcleo es un subespacio vectorial de dimensión 1 que induce un único punto afín en el espacio proyectivo.
+Por otra parte, si se analizan los puntos del del infinito de la forma $\mathbf{X}_\infty = (\mathbf{x}^T, 0)^T$, la condición de núcleo impone que $M\mathbf{x} = \mathbf{0}$. Al ser $M$ invertible, la única solución posible es la trivial $\mathbf{x} = \mathbf{0}$, la cual carece de sentido geométrico en el espacio proyectivo $\mathbb{P}^3_\mathbb{R}$. Esto concluye que el núcleo es un subespacio vectorial de dimensión 1 que induce un único punto afín en el espacio proyectivo.
 
 En cuanto a la coincidencia con el centro óptico geométrico, esta propiedad se deriva de la propia definición constructiva de la cámara. Si fijamos el origen de la referencia local de la cámara en dicho centro óptico $\mathbf{C}$, la recta afín que conecta a $\mathbf{C}$ con un punto genérico del espacio $\mathbf{A}$ se parametriza como $\mathbf{X}(t) = t\mathbf{A} + (1-t)\mathbf{C}$ con $t \in \mathbb{R}$. Al aplicar la transformación lineal lineal $P$, y sabiendo que $P\mathbf{C} = \mathbf{0}$ por ser $\mathbf{C}$ el elemento del núcleo, obtenemos:
 \[
