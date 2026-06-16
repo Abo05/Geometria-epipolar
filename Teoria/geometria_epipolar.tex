@@ -574,18 +574,15 @@ Sea $\mathbf{X} \in \mathbb{P}^3_\mathbb{R}$ un punto de la escena tridimensiona
     \label{fig:diagrama_epipolar}
 \end{figure}
 
-A partir de esta configuración espacial, se definen los elementos analíticos fundamentales:
 
-\begin{definition}[Plano epipolar]
-Geométricamente, el punto tridimensional $\mathbf{X}$ y los centros ópticos $\mathbf{C}_1$ y $\mathbf{C}_2$ de ambas cámaras determinan un plano en el espacio, que denominaremos \textit{plano epipolar} $\pi$.
+\begin{definition}[Línea base y Epípolos]
+    La recta que une de forma directa ambos centros ópticos, $\mathcal{L}\{\mathbf{C}_1, \mathbf{C}_2\}$, recibe el nombre de \textit{línea base}. Se denominan \textit{epípolos} a los puntos de intersección de esta recta con los planos imagen $\pi_1, \pi_2$, denotados como $\mathbf{e}_1 = \mathcal{L}\{\mathbf{C}_1, \mathbf{C}_2\} \cap \pi_1$ y $\mathbf{e}_2 = \mathcal{L}\{\mathbf{C}_1, \mathbf{C}_2\} \cap \pi_2$. 
 \end{definition}
 
 \vspace{2ex}
 
-Las rectas (rayos ópticos) que unen cada centro óptico con el punto $\mathbf{X}$ intersecan los planos imagen exactamente en los puntos de correspondencia $\mathbf{x}_1$ y $\mathbf{x}_2$.
-
-\begin{definition}[Línea base y Epípolos]
-    La recta que une de forma directa ambos centros ópticos, $\overline{\mathbf{C}_1 \mathbf{C}_2}$, recibe el nombre de \textit{línea base}. Se denominan \textit{epípolos} a los puntos de intersección de esta recta con los planos imagen, denotados como $\mathbf{e}_1$ y $\mathbf{e}_2$. 
+\begin{definition}[Plano epipolar]
+    Denominaremos plano epipolar a cualquier plano $H$ tal que $e_1, e_2 \in H$.
 \end{definition}
 
 \vspace{2ex}
@@ -596,18 +593,38 @@ Algebraicamente, se puede calcular el epípolo como la proyección del centro ó
 \]
 
 \begin{definition}[Líneas epipolares]
-    Llamaremos \textit{líneas epipolares} a las intersecciones del plano epipolar $\pi$ con los planos imagen de ambas cámaras, denotadas por $\mathbf{l}_1$ y $\mathbf{l}_2$. 
+    Llamaremos \textit{líneas epipolares} a las intersecciones del plano epipolar $\pi$ con los planos imagen de ambas cámaras. Así dado un punto $P \in \mathcal{A}_\mathcal{R}^3$ podemos expresarlo como $\mathbf{l}_1 = \mathbb{L}\{C_1, C_2, P\} \cap \pi_1$ y $\mathbf{l}_2 = \mathbb{L}\{C_1, C_2, P\} \cap \pi_2$. 
 \end{definition}
 
 \vspace{2ex}
 
+Así podemos definir una aplicación entre los dos planos imágenes qeu llevarán un punto del plano $\pi_1$ a su correspondiente línea epipolar en el plano $\pi_2$. Esta no es una aplicación punto a punto, sino una correlación proyectiva $\epsilon: \mathbb{P}^2_\mathbb{R} \longrightarrow \mathbb{P}^{2*}_\mathbb{R}$, donde $\mathbb{P}^{2*}_\mathbb{R}$ es el dual del proyectivo. O siendo más precisos, $\epsilon: \tilde{\pi_1} \setminus \{e_1\} \longrightarrow \tilde{\pi_2}^*$, donde $\tilde{pi_i}$ es la extensión proyectiva del plano $pi_i$. Esta aplicación está definida como:
+
+\begin{equation}
+    \epsilon (P) \longmapsto \mathcal{L}\{C_1, C_2, P\} \cap \tilde{pi_2}
+\end{equation}
+
+Como la aplicación no está definida en $e_1$ este debe ser su centro. Además la de un punto $P$ es una recta epipolar, con lo que su imagen tiene dimensión 1, así se puede entender que $e_1$ sea precisamente el centro. Se observa además de que $\epsilon$ es un correlación.
+
 \begin{observacion}
-    Dado que todos los planos epipolares posibles deben contener a la línea base, el conjunto de puntos de la escena genera un haz de planos epipolares cuyo eje es dicha línea base. Esto se traduce en un haz de líneas epipolares en cada plano imagen que convergen obligatoriamente en sus respectivos epípolos $\mathbf{e}_1$ y $\mathbf{e}_2$.
+    Dado que todos los planos epipolares posibles deben contener a la línea base, el conjunto de puntos de la escena genera un haz de planos epipolares en $\mathbb{P}^3_\mathbb{R}$ cuyo eje es dicha línea base. Esto se traduce en un haz de líneas epipolares en cada plano imagen que convergen obligatoriamente en sus respectivos epípolos $\mathbf{e}_1$ y $\mathbf{e}_2$.
 \end{observacion}
 
 \subsection{La Matriz Fundamental}
 
-La matriz fundamental es la representación algebraica de la geometría epipolar que establece la correspondencia geométrica entre dos vistas. A diferencia de una homografía, no constituye una aplicación punto a punto, sino una correlación proyectiva $F: \mathbb{P}^2_\mathbb{R} \longrightarrow \mathbb{P}^{2*}_\mathbb{R}$, donde $\mathbb{P}^{2*}_\mathbb{R}$ es el espacio de las rectas del proyectivo $\mathbb{P}^2_\mathbb{R}$. Esta aplicación asigna a cada punto homogéneo de la primera imagen su recta epipolar correspondiente en el otro plano imagen. Algebraicamente, se representa mediante una matriz de dimensiones $3 \times 3$.
+La matriz fundamental es la representación algebraica de la geometría epipolar.
+
+\begin{definition}[Matriz fundamental]
+    Llamaremos \textit{Matriz fundamental} a cualquiere representación matricial de $\epsilon$ en una referencia arbitraria y la denotraremos por $F$.
+\end{definition}
+
+Una manera de construir esta aplicación sería la siguiente. Se toma $H \subset P^3_\mathcal{R}$ plano cualquierea tal que $C_1, C_2 \notin H$. Para cada punto $X_1 \in \tilde{pi}_1$:
+
+\begin{enumerate}
+    \item Tomamos el punto $X = \mathcal{L}(X_1, C_1) \cap H$
+    \item Proyectamos $X$ en la segunda proyección $X_2 = PX$
+    \item Finalmente, tomamos la recta que pasar por $X_2$ y el epípolo $e_2$: $\mathcal{L}(\{X_1, e_2\})$ que se corresponde en coordenadas con el producto vectorial $e_2 \times X_2$
+\end{enumerate}
 
 A continuación, se desarrolla la deducción analítica para obtener la expresión explícita de dicha matriz.
 
@@ -617,7 +634,7 @@ La deducción de la matriz fundamental se obtiene construyendo algebraicamente l
 
 Para un punto $\mathbf{x}_1$ en la primera imagen, el rayo óptico correspondiente en el espacio tridimensional está constituido por la recta que une el centro óptico $\mathbf{C}_1$ con el conjunto de puntos del espacio que se proyectan en $\mathbf{x}_1$. Un punto particular de este rayo se puede obtener algebraicamente utilizando la pseudoinversa de la matriz de cámara, denotada como $P_1^+$, esto es $P_1^+ \in \mathbf{M}_{3 \times 4}$ tal que, $P_1 P_1^+ = I_{3 \times 3}$. Usando esto, el punto tridimensional $\mathbf{X} = P_1^+ \mathbf{x}_1$ pertenece a dicho rayo, puesto que $P_1 \mathbf{X} = P_1 (P_1^+ \mathbf{x_1}) = \mathbf{x}_1$.
 
-La línea epipolar $\mathbf{l}_2$ en la segunda vista es la proyección geométrica de este rayo óptico bajo la acción de la segunda cámara $P_2$. En el plano dual $\mathbb{P}^{2*}$, una recta queda unívocamente definida por el producto vectorial de dos puntos distintos que pertenezcan a ella. Por tanto, se proyectan los dos puntos tridimensionales conocidos del rayo sobre la segunda imagen:
+La línea epipolar $\mathbf{l}_2$ en la segunda vista es la proyección geométrica de este rayo óptico bajo la acción de la segunda cámara $P_2$.Por el principio de dualidad punto-recta en el espacio proyectivo $\mathbb{P}_\mathbb{R}^{2*}$, las coordenadas homogéneas de la recta que pasa por dos puntos se pueden obtener mediante el producto vectorial de dichos puntos. Por tanto, se proyectan los dos puntos tridimensionales conocidos del rayo sobre la segunda imagen:
 
 \begin{enumerate}
     \item La proyección del centro óptico de la primera cámara, $\mathbf{C}_1$, es por definición el segundo epípolo:
