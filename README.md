@@ -27,13 +27,9 @@ El código de la carpeta `Practica/` requiere Python 3 y las siguientes librerí
 * `numpy`
 * `opencv-python` (cv2)
 
-Para ejecutar el código, se recomienda activar el entorno virtual incluido o instalar las dependencias y ejecutar el script principal:
+Para ejecutar el código, se recomienda activar un entorno virtual o instalar las dependencias y ejecutar el script principal:
 
 ```bash
-# Activar entorno virtual (Linux/macOS)
-source venv/bin/activate
-
-# Ejecutar la generación del mapa de disparidad
 cd Practica
 python main.py
 
